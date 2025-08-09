@@ -47,14 +47,13 @@
   </div>
 </div>
 
-<div id="versionTag">Power by Grok-3-mini AI解釋內容只供參考 080825 1945</div>
+<div id="versionTag">Power by Grok AI解釋內容只供參考</div>
 
 <script type="module">
 // 注意：這裡不再需要你的 Grok API 金鑰，因為它將由後端處理。
 const GROK_MODEL = "grok-3-mini";
-// 請將以下 URL 替換為你的 Vercel 後端代理網址
-// 格式通常是 https://你的專案名稱.vercel.app/api/grok-proxy
-const PROXY_URL = "https://bible-ai2.vercel.app/api/grok-proxy";
+// ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
+const PROXY_URL = "https://<你的Worker網址>.workers.dev";
 
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
@@ -155,7 +154,7 @@ function showChapter(){
 prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
 nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
 
-// ✅ AI 解釋（使用後端代理）
+// ✅ AI 解釋（使用 Cloudflare Worker 代理）
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
@@ -193,24 +192,25 @@ ${passage}`
 ⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
 經文內容如下：
 ${passage}`;
-
+  
   try{
-    const payload = {
-        model: GROK_MODEL,
-        messages: [{
-            role: "user",
-            content: prompt
-        }],
+    const payload = { 
+      model: GROK_MODEL,
+      messages: [{
+        role: "user",
+        content: prompt
+      }]
     };
-    const res = await fetch(PROXY_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
+    const res=await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    if(!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+    }
+    const data=await res.json();
     outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
   }catch(e){
     outputDiv.textContent="❌ AI 解釋失敗："+e.message;
@@ -218,7 +218,7 @@ ${passage}`;
   loading.classList.add("hidden");
 };
 
-// ✅ 地理背景（使用後端代理）
+// ✅ 地理背景（使用 Cloudflare Worker 代理）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   if(!b||!ch)return;
@@ -228,21 +228,22 @@ geoButton.onclick=async()=>{
   try{
     const target=v?`第${v}節`:`第${ch}章`;
     const prompt=`請提供《${b} ${target}》的地理背景資訊，描述出現的地名及其現代位置（僅文字，無需任何連結）：`;
-    const payload = {
-        model: GROK_MODEL,
-        messages: [{
-            role: "user",
-            content: prompt
-        }],
+    const payload={
+      model: GROK_MODEL,
+      messages:[{
+        role: "user",
+        content: prompt
+      }]
     };
     const res=await fetch(PROXY_URL,{
         method:"POST",
-        headers:{
-            "Content-Type":"application/json",
-        },
+        headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify(payload)
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+    }
     const data=await res.json();
     let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
     outputDiv.innerHTML="<strong>📍 地理位置：</strong><br>"+geoText.replace(/\n/g,"<br>");
