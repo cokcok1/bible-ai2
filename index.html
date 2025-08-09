@@ -47,10 +47,14 @@
   </div>
 </div>
 
-<div id="versionTag">Power by Google Gemini AI解釋內容只供參考 080825 1422</div>
+<div id="versionTag">Power by Grok-3-mini AI解釋內容只供參考 080825 1844</div>
 
 <script type="module">
-const GEMINI_KEY = "AIzaSyBURyCnTRY5pO0OZjyMRI37jYEU_tWShhg";
+// 注意：這裡不再需要你的 Grok API 金鑰，因為它將由後端處理。
+const GROK_MODEL = "grok-3-mini";
+// 請將以下 URL 替換為你的 Vercel 後端代理網址
+// 格式通常是 https://你的專案名稱.vercel.app/api/grok-proxy
+const PROXY_URL = "https://bible-ai2.vercel.app/api/grok-proxy";
 
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
@@ -151,7 +155,7 @@ function showChapter(){
 prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
 nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
 
-// ✅ AI 解釋（使用你的新提示）
+// ✅ AI 解釋（使用後端代理）
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
@@ -191,19 +195,30 @@ ${passage}`
 ${passage}`;
 
   try{
-    const endpoint=`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
-    const payload={contents:[{parts:[{text:prompt}]}]};
-    const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const payload = {
+        model: GROK_MODEL,
+        messages: [{
+            role: "user",
+            content: prompt
+        }],
+    };
+    const res = await fetch(PROXY_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload)
+    });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data=await res.json();
-    outputDiv.innerHTML=data.candidates?.[0]?.content?.parts?.map(p=>p.text).join("\n").replace(/\n/g,"<br>")||"⚠️ AI 沒有回覆";
+    const data = await res.json();
+    outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
   }catch(e){
     outputDiv.textContent="❌ AI 解釋失敗："+e.message;
   }
   loading.classList.add("hidden");
 };
 
-// ✅ 地理背景（只文字解釋）
+// ✅ 地理背景（使用後端代理）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   if(!b||!ch)return;
@@ -211,14 +226,25 @@ geoButton.onclick=async()=>{
   outputDiv.innerHTML="🌍 正在獲取地理資料...";
 
   try{
-    const endpoint=`https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
     const target=v?`第${v}節`:`第${ch}章`;
     const prompt=`請提供《${b} ${target}》的地理背景資訊，描述出現的地名及其現代位置（僅文字，無需任何連結）：`;
-    const payload={contents:[{parts:[{text:prompt}]}]};
-    const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const payload = {
+        model: GROK_MODEL,
+        messages: [{
+            role: "user",
+            content: prompt
+        }],
+    };
+    const res=await fetch(PROXY_URL,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+        },
+        body:JSON.stringify(payload)
+    });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const data=await res.json();
-    let geoText=data.candidates?.[0]?.content?.parts?.map(p=>p.text).join("\n")||"⚠️ 無回覆";
+    let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
     outputDiv.innerHTML="<strong>📍 地理位置：</strong><br>"+geoText.replace(/\n/g,"<br>");
   }catch(e){
     outputDiv.textContent="❌ 地理資料獲取失敗："+e.message;
