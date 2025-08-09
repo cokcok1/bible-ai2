@@ -47,10 +47,9 @@
   </div>
 </div>
 
-<div id="versionTag">Powered by Grok-cloudflare AI解釋內容只供參考080825 2050</div>
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 0808252133</div>
 
 <script type="module">
-// 注意：這裡不再需要你的 Grok API 金鑰，因為它將由後端處理。
 const GROK_MODEL = "grok-3-mini";
 // ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
 const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
@@ -158,7 +157,10 @@ nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSe
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
-  if(!b||!ch)return;
+  if(!b||!ch){
+    outputDiv.textContent="❌ 請先選擇書卷和章節！";
+    return;
+  }
   if(passage.length>4000) passage=passage.substring(0,4000)+" ...（內容已截斷）";
 
   loading.classList.remove("hidden");
@@ -207,8 +209,14 @@ ${passage}`;
         body: JSON.stringify(payload)
     });
     if(!res.ok) {
-        const errorData = await res.json();
-        throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        const errorText = await res.text();
+        // 嘗試解析錯誤訊息
+        try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        } catch {
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+        }
     }
     const data=await res.json();
     outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
@@ -221,7 +229,10 @@ ${passage}`;
 // ✅ 地理背景（使用 Cloudflare Worker 代理）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
-  if(!b||!ch)return;
+  if(!b||!ch){
+    outputDiv.textContent="❌ 請先選擇書卷和章節！";
+    return;
+  }
   loading.classList.remove("hidden");
   outputDiv.innerHTML="🌍 正在獲取地理資料...";
 
@@ -241,8 +252,13 @@ geoButton.onclick=async()=>{
         body:JSON.stringify(payload)
     });
     if(!res.ok) {
-        const errorData = await res.json();
-        throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        const errorText = await res.text();
+        try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        } catch {
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+        }
     }
     const data=await res.json();
     let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
