@@ -47,13 +47,13 @@
   </div>
 </div>
 
-<div id="versionTag">Power by Grok AI解釋內容只供參考</div>
+<div id="versionTag">Power by Grok-cloudflare AI解釋內容只供參考080825 2050</div>
 
 <script type="module">
 // 注意：這裡不再需要你的 Grok API 金鑰，因為它將由後端處理。
 const GROK_MODEL = "grok-3-mini";
 // ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
-const PROXY_URL = "https://<你的Worker網址>.workers.dev";
+const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
 
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
