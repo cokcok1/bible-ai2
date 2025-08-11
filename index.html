@@ -45,7 +45,7 @@
     <div id="loadingIndicator" class="hidden text-center mt-1 text-blue-600 text-sm">🤔 AI 正在思考中...</div>
   </div>
 </div>
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 Test4</div>
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 Test 5</div>
 <script type="module">
 const GROK_MODEL = "grok-3-mini";
 const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
@@ -79,8 +79,8 @@ function parseBibleTXT(text){
 // 載入經文
 async function loadBible(){
   try{
-    const res=await fetch('chinese_union_trad_trad.txt');
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const res=await fetch('chinese_union_trad_trad.txt', { cache: 'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     const raw=await res.text();
     bibleData=parseBibleTXT(raw);
     for(const b in bibleData){
@@ -188,20 +188,20 @@ ${passage}`;
       temperature: 0.7
     };
     const res=await fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
     if(!res.ok) {
-        const errorText = await res.text();
-        let errorMessage;
-        try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
-        } catch {
-            errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
-        }
-        throw new Error(errorMessage);
+      const errorText = await res.text();
+      let errorMessage;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
+      } catch {
+        errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
+      }
+      throw new Error(errorMessage);
     }
     const data=await res.json();
     if (!data.choices || !data.choices[0]?.message?.content) {
@@ -236,20 +236,20 @@ geoButton.onclick=async()=>{
       temperature: 0.7
     };
     const res=await fetch(PROXY_URL,{
-        method:"POST",
-        headers:{ 'Content-Type': 'application/json' },
-        body:JSON.stringify(payload)
+      method:"POST",
+      headers:{ 'Content-Type': 'application/json' },
+      body:JSON.stringify(payload)
     });
     if(!res.ok) {
-        const errorText = await res.text();
-        let errorMessage;
-        try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
-        } catch {
-            errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
-        }
-        throw new Error(errorMessage);
+      const errorText = await res.text();
+      let errorMessage;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
+      } catch {
+        errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
+      }
+      throw new Error(errorMessage);
     }
     const data=await res.json();
     if (!data.choices || !data.choices[0]?.message?.content) {
