@@ -40,20 +40,15 @@
       📖 請先選擇書卷和章節來閱讀聖經。
     </div>
   </div>
-
   <div id="aiSection" class="rounded-t-lg shadow-md">
     <div id="output" class="no-scrollbar"></div>
     <div id="loadingIndicator" class="hidden text-center mt-1 text-blue-600 text-sm">🤔 AI 正在思考中...</div>
   </div>
 </div>
-
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 0808252133</div>
-
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 TEST</div>
 <script type="module">
 const GROK_MODEL = "grok-3-mini";
-// ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
-const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
-
+const XAI_API_KEY = "xai-jL0zHCrN0ifeFWkusphJznPveK4lvdvMb8sOSUDvTZbbOIeFzQDl2i4001LHRf53SzjbnzipNUwGvLEH"; // 僅限測試，請勿喺生產環境硬編碼
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
 const verseSelect=document.getElementById('verseSelect');
@@ -66,7 +61,6 @@ const prevBtn=document.getElementById('prevChapter');
 const nextBtn=document.getElementById('nextChapter');
 const loadError=document.getElementById('loadError');
 let bibleData={};
-
 // 解析 TXT
 function parseBibleTXT(text){
   const lines=text.split('\n');
@@ -82,7 +76,6 @@ function parseBibleTXT(text){
   });
   return data;
 }
-
 // 載入經文
 async function loadBible(){
   try{
@@ -101,7 +94,6 @@ async function loadBible(){
   }
 }
 loadBible();
-
 // 書卷選擇
 bookSelect.addEventListener('change',()=>{
   const b=bookSelect.value;
@@ -119,7 +111,6 @@ bookSelect.addEventListener('change',()=>{
     chapterSelect.appendChild(o);
   });
 });
-
 // 章節選擇
 chapterSelect.addEventListener('change',()=>{
   const b=bookSelect.value;const ch=chapterSelect.value;
@@ -133,10 +124,8 @@ chapterSelect.addEventListener('change',()=>{
   verseSelect.disabled=false;
   showChapter();
 });
-
 // 顯示內容
 verseSelect.addEventListener('change',()=>showChapter());
-
 function showChapter(){
   const b=bookSelect.value;const ch=chapterSelect.value;const v=verseSelect.value;
   if(!b||!ch){bibleContentDiv.textContent="📖 請選擇書卷和章節";return;}
@@ -152,8 +141,7 @@ function showChapter(){
 }
 prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
 nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
-
-// ✅ AI 解釋（使用 Cloudflare Worker 代理）
+// ✅ AI 解釋（直接連繫 xAI API）
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
@@ -162,26 +150,21 @@ explainButton.onclick=async()=>{
     return;
   }
   if(passage.length>4000) passage=passage.substring(0,4000)+" ...（內容已截斷）";
-
   loading.classList.remove("hidden");
   outputDiv.innerHTML="🤔 AI 正在思考中...";
-
   const target=v?`第${v}節`:`第${ch}章`;
   const prompt=v?
 `請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經 ${b} ${target}。
-
 📌 如果是特定節，請提供：
 - 【經文解釋】詳細闡述該節的含義。
 - 【神學與啟示】說明屬靈及神學重點。
 - 【背景與引用】補充歷史背景及相關經文支持。
 - 【應用與反思】給出屬靈應用與默想方向。
-
 ⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
 經文內容如下：
 ${passage}`
 :
 `請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經 ${b} ${target}。
-
 📌 如果是整章，請提供：
 - 【經文概要】概述此章內容與主要事件。
 - 【經文解釋】詳細闡述該節的含義。
@@ -190,27 +173,30 @@ ${passage}`
 - 【引用】列出其他聖經相關經文，並說明其關聯。
 - 【屬靈應用】提供如何將此章的信息應用於信徒生活。
 - 【默想與反思問題】提出2-3個引導思考與靈修的問題。
-
 ⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
 經文內容如下：
 ${passage}`;
-  
+ 
   try{
-    const payload = { 
+    const payload = {
       model: GROK_MODEL,
       messages: [{
         role: "user",
         content: prompt
-      }]
+      }],
+      max_tokens: 500,
+      temperature: 0.7
     };
-    const res=await fetch(PROXY_URL, {
+    const res=await fetch('https://api.x.ai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${XAI_API_KEY}`
+        },
         body: JSON.stringify(payload)
     });
     if(!res.ok) {
         const errorText = await res.text();
-        // 嘗試解析錯誤訊息
         try {
             const errorData = JSON.parse(errorText);
             throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
@@ -225,8 +211,7 @@ ${passage}`;
   }
   loading.classList.add("hidden");
 };
-
-// ✅ 地理背景（使用 Cloudflare Worker 代理）
+// ✅ 地理背景（直接連繫 xAI API）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   if(!b||!ch){
@@ -235,7 +220,6 @@ geoButton.onclick=async()=>{
   }
   loading.classList.remove("hidden");
   outputDiv.innerHTML="🌍 正在獲取地理資料...";
-
   try{
     const target=v?`第${v}節`:`第${ch}章`;
     const prompt=`請提供《${b} ${target}》的地理背景資訊，描述出現的地名及其現代位置（僅文字，無需任何連結）：`;
@@ -244,11 +228,16 @@ geoButton.onclick=async()=>{
       messages:[{
         role: "user",
         content: prompt
-      }]
+      }],
+      max_tokens: 500,
+      temperature: 0.7
     };
-    const res=await fetch(PROXY_URL,{
+    const res=await fetch('https://api.x.ai/v1/chat/completions',{
         method:"POST",
-        headers:{ 'Content-Type':'application/json' },
+        headers:{
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${XAI_API_KEY}`
+        },
         body:JSON.stringify(payload)
     });
     if(!res.ok) {
