@@ -45,10 +45,10 @@
     <div id="loadingIndicator" class="hidden text-center mt-1 text-blue-600 text-sm">🤔 AI 正在思考中...</div>
   </div>
 </div>
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 TEST1</div>
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 test2</div>
 <script type="module">
 const GROK_MODEL = "grok-3-mini";
-const XAI_API_KEY = "xai-jL0zHCrN0ifeFWkusphJznPveK4lvdvMb8sOSUDvTZbbOIeFzQDl2i4001LHRf53SzjbnzipNUwGvLEH"; // 僅限測試，請勿喺生產環境硬編碼
+const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
 const verseSelect=document.getElementById('verseSelect');
@@ -141,7 +141,7 @@ function showChapter(){
 }
 prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
 nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
-// ✅ AI 解釋（直接連繫 xAI API）
+// ✅ AI 解釋（使用 Cloudflare Worker）
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
@@ -187,12 +187,9 @@ ${passage}`;
       max_tokens: 500,
       temperature: 0.7
     };
-    const res=await fetch('https://api.x.ai/v1/chat/completions', {
+    const res=await fetch(PROXY_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
     if(!res.ok) {
@@ -217,7 +214,7 @@ ${passage}`;
   }
   loading.classList.add("hidden");
 };
-// ✅ 地理背景（直接連繫 xAI API）
+// ✅ 地理背景（使用 Cloudflare Worker）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   if(!b||!ch){
@@ -238,12 +235,9 @@ geoButton.onclick=async()=>{
       max_tokens: 500,
       temperature: 0.7
     };
-    const res=await fetch('https://api.x.ai/v1/chat/completions',{
+    const res=await fetch(PROXY_URL,{
         method:"POST",
-        headers:{
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`
-        },
+        headers:{ 'Content-Type': 'application/json' },
         body:JSON.stringify(payload)
     });
     if(!res.ok) {
