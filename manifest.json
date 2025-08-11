@@ -1,6 +1,6 @@
 {
-  "name": "手機聖經AI解釋器",
-  "short_name": "聖經AI",
+  "name": "聖經閱讀器",
+  "short_name": "聖經閱讀器",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
