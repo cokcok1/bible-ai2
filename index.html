@@ -45,7 +45,7 @@
     <div id="loadingIndicator" class="hidden text-center mt-1 text-blue-600 text-sm">🤔 AI 正在思考中...</div>
   </div>
 </div>
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 TEST</div>
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 TEST1</div>
 <script type="module">
 const GROK_MODEL = "grok-3-mini";
 const XAI_API_KEY = "xai-jL0zHCrN0ifeFWkusphJznPveK4lvdvMb8sOSUDvTZbbOIeFzQDl2i4001LHRf53SzjbnzipNUwGvLEH"; // 僅限測試，請勿喺生產環境硬編碼
@@ -197,17 +197,23 @@ ${passage}`;
     });
     if(!res.ok) {
         const errorText = await res.text();
+        let errorMessage;
         try {
             const errorData = JSON.parse(errorText);
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+            errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
         } catch {
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+            errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
         }
+        throw new Error(errorMessage);
     }
     const data=await res.json();
-    outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
+    if (!data.choices || !data.choices[0]?.message?.content) {
+      throw new Error("API 回應無效：無 choices 或 content");
+    }
+    outputDiv.innerHTML = data.choices[0].message.content.replace(/\n/g,"<br>");
   }catch(e){
     outputDiv.textContent="❌ AI 解釋失敗："+e.message;
+    console.error("AI 解釋錯誤:", e);
   }
   loading.classList.add("hidden");
 };
@@ -242,18 +248,24 @@ geoButton.onclick=async()=>{
     });
     if(!res.ok) {
         const errorText = await res.text();
+        let errorMessage;
         try {
             const errorData = JSON.parse(errorText);
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+            errorMessage = `API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`;
         } catch {
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+            errorMessage = `API 錯誤：HTTP ${res.status} - ${errorText}`;
         }
+        throw new Error(errorMessage);
     }
     const data=await res.json();
-    let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
+    if (!data.choices || !data.choices[0]?.message?.content) {
+      throw new Error("API 回應無效：無 choices 或 content");
+    }
+    let geoText = data.choices[0].message.content;
     outputDiv.innerHTML="<strong>📍 地理位置：</strong><br>"+geoText.replace(/\n/g,"<br>");
   }catch(e){
     outputDiv.textContent="❌ 地理資料獲取失敗："+e.message;
+    console.error("地理背景錯誤:", e);
   }
   loading.classList.add("hidden");
 };
