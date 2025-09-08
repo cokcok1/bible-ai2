@@ -5,10 +5,17 @@ export const config = {
 };
 
 export default async function handler(request) {
-  // 檢查請求方法是否為 POST
-  if (request.method !== 'POST') {
-    return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
-  }
+  try {
+    // 從 Vercel 的環境變數中讀取 API 金鑰
+    const grokApiKey = process.env.GROK_API_KEY;
+
+    // 這是 Grok API 的假設性端點。
+    // 當 Grok API 正式開放後，請將這個 URL 替換為實際的 URL。
+    const grokApiEndpoint = "https://api.grok.xai/v1/chat/completions";
+
+    if (request.method !== 'POST') {
+      return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
+    }
 
     // 檢查金鑰是否已設定
     if (!grokApiKey) {
