@@ -21,7 +21,7 @@
 <body class="flex flex-col h-screen">
 <div class="flex-1 flex flex-col overflow-hidden">
   <div id="bibleSection" class="shadow-md rounded-b-lg">
-    <h1 class="text-2xl font-bold text-center mb-3 text-blue-700">📖 聖經閱讀器</h1>
+    <h1 class="text-2xl font-bold text-center mb-3 text-blue-700">📖 聖經閱讀器 (By Grok)</h1>
     <div id="loadError" class="hidden bg-red-100 text-red-700 p-2 mb-2 rounded"></div>
     <div class="grid grid-cols-3 gap-3 mb-3">
       <select id="bookSelect" class="p-3 border rounded-lg shadow-sm w-full"><option value="">請選擇書卷</option></select>
@@ -47,11 +47,12 @@
   </div>
 </div>
 
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 1845</div>
+<div id="versionTag">Powered by Grok AI解釋內容只供參考 0808252133</div>
 
 <script type="module">
-// 注意：API金鑰已移除並應儲存在您的Cloudflare Worker中。
-const CLOUDFLARE_WORKER_ENDPOINT = "https://grok-proxy-worker.cokcok.workers.dev";
+const GROK_MODEL = "grok-3-mini";
+// ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
+const PROXY_URL = "https://grok-proxy-worker.cokcok.workers.dev";
 
 const bookSelect=document.getElementById('bookSelect');
 const chapterSelect=document.getElementById('chapterSelect');
@@ -152,11 +153,14 @@ function showChapter(){
 prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
 nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
 
-// ✅ AI 解釋
+// ✅ AI 解釋（使用 Cloudflare Worker 代理）
 explainButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
   let passage=bibleContentDiv.innerText;
-  if(!b||!ch)return;
+  if(!b||!ch){
+    outputDiv.textContent="❌ 請先選擇書卷和章節！";
+    return;
+  }
   if(passage.length>4000) passage=passage.substring(0,4000)+" ...（內容已截斷）";
 
   loading.classList.remove("hidden");
@@ -190,30 +194,45 @@ ${passage}`
 ⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
 經文內容如下：
 ${passage}`;
-
+  
   try{
-    const payload={
-    prompt: prompt
-};
-
-    const res=await fetch(CLOUDFLARE_WORKER_ENDPOINT,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(payload)
+    const payload = { 
+      model: GROK_MODEL,
+      messages: [{
+        role: "user",
+        content: prompt
+      }]
+    };
+    const res=await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok) {
+        const errorText = await res.text();
+        // 嘗試解析錯誤訊息
+        try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        } catch {
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+        }
+    }
     const data=await res.json();
-    outputDiv.innerHTML=data.choices?.[0]?.message?.content.replace(/\n/g,"<br>")||"⚠️ AI 沒有回覆";
+    outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
   }catch(e){
     outputDiv.textContent="❌ AI 解釋失敗："+e.message;
   }
   loading.classList.add("hidden");
 };
 
-// ✅ 地理背景（只文字解釋）
+// ✅ 地理背景（使用 Cloudflare Worker 代理）
 geoButton.onclick=async()=>{
   const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
-  if(!b||!ch)return;
+  if(!b||!ch){
+    outputDiv.textContent="❌ 請先選擇書卷和章節！";
+    return;
+  }
   loading.classList.remove("hidden");
   outputDiv.innerHTML="🌍 正在獲取地理資料...";
 
@@ -221,17 +240,28 @@ geoButton.onclick=async()=>{
     const target=v?`第${v}節`:`第${ch}章`;
     const prompt=`請提供《${b} ${target}》的地理背景資訊，描述出現的地名及其現代位置（僅文字，無需任何連結）：`;
     const payload={
-        model: "YOUR_GROK_MODEL",
-        messages: [{ role: "user", content: prompt }]
+      model: GROK_MODEL,
+      messages:[{
+        role: "user",
+        content: prompt
+      }]
     };
-    const res=await fetch(CLOUDFLARE_WORKER_ENDPOINT,{
+    const res=await fetch(PROXY_URL,{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{ 'Content-Type':'application/json' },
         body:JSON.stringify(payload)
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok) {
+        const errorText = await res.text();
+        try {
+            const errorData = JSON.parse(errorText);
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
+        } catch {
+            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+        }
+    }
     const data=await res.json();
-    let geoText=data.choices?.[0]?.message?.content||"⚠️ 無回覆";
+    let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
     outputDiv.innerHTML="<strong>📍 地理位置：</strong><br>"+geoText.replace(/\n/g,"<br>");
   }catch(e){
     outputDiv.textContent="❌ 地理資料獲取失敗："+e.message;
