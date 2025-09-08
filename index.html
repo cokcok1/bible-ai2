@@ -193,9 +193,9 @@ ${passage}`;
 
   try{
     const payload={
-        model: "YOUR_GROK_MODEL",
-        messages: [{ role: "user", content: prompt }]
-    };
+    prompt: prompt
+};
+
     const res=await fetch(CLOUDFLARE_WORKER_ENDPOINT,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
