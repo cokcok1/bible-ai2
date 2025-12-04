@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>聖經深度研讀 (V9 - Gemini整合版)</title>
+    <title>聖經 AI 深度研讀 (V10 - Grok/Gemini整合版)</title>
     <style>
         :root {
             --primary: #2c3e50;
             --accent: #8e44ad;
-            --gemini-color: #d96570; /* Gemini 品牌色調類似 */
+            --gemini-color: #d96570;
+            --grok-color: #000000; /* Grok 使用黑色 */
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #333;
@@ -62,24 +63,40 @@
             position: relative;
         }
 
-        /* 按鈕區 (置頂) */
+        /* 按鈕區 (改為3欄) */
         .action-area { 
             display: grid; 
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: 1fr 1fr 1fr; 
             gap: 10px;
             margin-bottom: 20px; 
         }
-        .copy-btn {
-            background-color: var(--accent); font-size: 1rem; padding: 12px;
-            margin-top: 0;
+        
+        /* 按鈕樣式 */
+        .ai-btn, .copy-btn, .grok-btn {
+            font-size: 0.9rem; padding: 12px;
+            margin-top: 0; color: white; border: none;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
         }
+
+        /* Gemini 金色 */
         .ai-btn {
-            background-color: #f39c12; /* 金色 */
-            color: white; font-size: 1rem; padding: 12px;
-            margin-top: 0;
+            background-color: #f39c12; 
             box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
         }
         .ai-btn:hover { background-color: #e67e22; }
+
+        /* Grok 黑色 */
+        .grok-btn {
+            background-color: var(--grok-color);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .grok-btn:hover { background-color: #333; }
+
+        /* 複製 紫色 */
+        .copy-btn {
+            background-color: var(--accent);
+        }
+        .copy-btn:hover { background-color: #732d91; }
 
         .ref-title {
             font-size: 1.3rem; font-weight: bold; color: var(--accent);
@@ -105,19 +122,14 @@
             font-size: 1.2rem; font-weight: bold; color: #333;
             margin-bottom: 15px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;
         }
-        .gemini-content {
-            font-size: 1.05rem; line-height: 1.8; color: #444;
-        }
-        /* 簡單的 Markdown 樣式 */
+        .gemini-content { font-size: 1.05rem; line-height: 1.8; color: #444; }
         .gemini-content h1, .gemini-content h2, .gemini-content h3 { color: #2c3e50; margin-top: 20px; font-size: 1.1em; }
         .gemini-content strong { color: #c0392b; }
         .gemini-content ul { padding-left: 20px; }
         .gemini-content li { margin-bottom: 8px; }
 
         /* 載入動畫 */
-        .ai-loading {
-            text-align: center; padding: 20px; font-style: italic; color: #666; display: none;
-        }
+        .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #666; display: none; }
         .ai-spinner {
             display: inline-block; width: 20px; height: 20px;
             border: 3px solid #f3f3f3; border-top: 3px solid #f39c12;
@@ -134,7 +146,7 @@
 
         @media (max-width: 600px) { 
             .controls { grid-template-columns: 1fr; } 
-            .action-area { grid-template-columns: 1fr; }
+            .action-area { grid-template-columns: 1fr; } /* 手機上按鈕垂直排列 */
         }
     </style>
 </head>
@@ -165,8 +177,11 @@
     <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
-            <button class="ai-btn" onclick="callGeminiAPI()">✨ 立即 AI 解經</button>
-            <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令, 可在AI Apps貼上</button>
+            <button class="ai-btn" onclick="callGeminiAPI()">✨ 立即 Gemini 解經</button>
+            
+            <button class="grok-btn" onclick="openGrok()">🚀 複製並往 Grok</button>
+            
+            <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
         <div class="ref-title" id="displayRef"></div>
@@ -176,11 +191,9 @@
             <div class="gemini-header">
                 <span>🤖 Gemini 2.0 Flash 解讀</span>
             </div>
-            
             <div id="aiLoading" class="ai-loading">
                 <div class="ai-spinner"></div> 正在連線 Google Gemini 思考神學意涵...
             </div>
-            
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
@@ -191,7 +204,7 @@
 <textarea id="hiddenPrompt" style="display:none;"></textarea>
 
 <script>
-    // --- API 設定 (使用者專用) ---
+    // --- API 設定 ---
     const GEMINI_KEY = "AIzaSyBURyCnTRY5pO0OZjyMRI37jYEU_tWShhg";
     const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
@@ -201,36 +214,29 @@
 
     // 初始化：設定日期
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today}`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V10)`;
 
     window.onload = async function() {
         try {
             const response = await fetch(BIBLE_URL);
             if (!response.ok) throw new Error("網絡下載失敗");
-            
             const reader = response.body.getReader();
             const contentLength = +response.headers.get('Content-Length');
             let receivedLength = 0;
             let chunks = [];
-            
             while(true) {
                 const {done, value} = await reader.read();
                 if (done) break;
                 chunks.push(value);
                 receivedLength += value.length;
-                if (contentLength) {
-                    document.getElementById('progressFill').style.width = (receivedLength / contentLength * 100) + "%";
-                }
+                if (contentLength) document.getElementById('progressFill').style.width = (receivedLength / contentLength * 100) + "%";
             }
-            
             document.getElementById('loadingText').innerText = "解析結構中...";
             let text = new TextDecoder("utf-8").decode(concatUint8Arrays(chunks));
             parseBibleText(text);
-            
             document.getElementById('loadingArea').style.display = 'none';
             document.getElementById('controlPanel').className += ' active';
             initSelectors();
-
         } catch (e) {
             document.getElementById('loadingText').innerText = "錯誤：" + e.message;
         }
@@ -247,7 +253,6 @@
     function parseBibleText(rawText) {
         const lines = rawText.split('\n');
         const lineRegex = /^(.+?)\s+(\d+):(\d+)\s+(.*)$/;
-
         lines.forEach(line => {
             line = line.trim();
             if (!line) return;
@@ -257,7 +262,6 @@
                 const chapter = parseInt(match[2]);
                 const verse = parseInt(match[3]);
                 const content = match[4];
-
                 if (!bibleData[book]) { bibleData[book] = {}; bookOrder.push(book); }
                 if (!bibleData[book][chapter]) { bibleData[book][chapter] = {}; }
                 bibleData[book][chapter][verse] = content;
@@ -269,7 +273,6 @@
     const chapSel = document.getElementById('chapterSelect');
     const startVerSel = document.getElementById('startVerseSelect');
     const endVerSel = document.getElementById('endVerseSelect');
-    const toLabel = document.getElementById('toLabel');
 
     function initSelectors() {
         bookSel.innerHTML = "";
@@ -308,12 +311,12 @@
     function updateEndVerses() {
         const startVal = startVerSel.value;
         if (startVal === "all") {
+            document.getElementById('toLabel').style.display = "none";
             endVerSel.style.display = "none";
-            toLabel.style.display = "none";
             return;
         }
+        document.getElementById('toLabel').style.display = "block";
         endVerSel.style.display = "block";
-        toLabel.style.display = "block";
         endVerSel.innerHTML = "";
         const book = bookSel.value;
         const chap = chapSel.value;
@@ -330,10 +333,9 @@
     }
 
     function displayScripture() {
-        // 重置 Gemini 區域
         document.getElementById('geminiSection').style.display = 'none';
         document.getElementById('geminiResult').innerHTML = '';
-
+        
         const book = bookSel.value;
         const chap = chapSel.value;
         const startVer = startVerSel.value;
@@ -367,7 +369,7 @@
         document.getElementById('resultCard').style.display = 'block';
         document.getElementById('displayRef').innerText = refText;
         document.getElementById('displayText').innerHTML = displayText;
-        document.getElementById('actionArea').style.display = 'grid'; // 確保按鈕顯示
+        document.getElementById('actionArea').style.display = 'grid';
 
         generateHiddenPrompt(refText, promptText);
     }
@@ -386,16 +388,14 @@
 - 【引用】列出其他聖經相關經文，並說明其關聯。
 - 【屬靈應用】提供如何將此章的信息應用於信徒生活。
 - 【默想與反思問題】提出2-3個引導思考與靈修的問題。`;
-
         document.getElementById('hiddenPrompt').value = prompt;
     }
 
-    // --- Gemini API 呼叫邏輯 ---
+    // --- Gemini API ---
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         if(!prompt) { alert("請先閱讀經文"); return; }
 
-        // 顯示載入中
         const section = document.getElementById('geminiSection');
         const loading = document.getElementById('aiLoading');
         const result = document.getElementById('geminiResult');
@@ -403,77 +403,61 @@
         section.style.display = 'block';
         loading.style.display = 'block';
         result.innerHTML = '';
-        
-        // 捲動到底部
         section.scrollIntoView({ behavior: 'smooth' });
 
         try {
-            const payload = {
-                contents: [{
-                    parts: [{ text: prompt }]
-                }]
-            };
-
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
             const response = await fetch(GEMINI_API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
             const data = await response.json();
-            
-            // 解析 Gemini 回傳的結構
             const rawMarkdown = data.candidates[0].content.parts[0].text;
-            
-            // 簡單渲染 Markdown (粗體, 標題, 分點)
-            const htmlContent = parseMarkdown(rawMarkdown);
-            
-            result.innerHTML = htmlContent;
-
+            result.innerHTML = parseMarkdown(rawMarkdown);
         } catch (error) {
-            result.innerHTML = `<span style="color:red;">錯誤：無法連接 Gemini API (${error.message})。請檢查您的網絡或 API Key。</span>`;
+            result.innerHTML = `<span style="color:red;">錯誤：無法連接 Gemini API (${error.message})</span>`;
         } finally {
             loading.style.display = 'none';
         }
     }
 
-    // 簡單的 Markdown 轉 HTML 輔助函數
     function parseMarkdown(text) {
-        // 處理粗體 **text**
         let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        // 處理標題 ## Title
         html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-        // 處理列表 * item
         html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
         html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-        // 換行轉 <br> (除了標題和列表)
         html = html.replace(/\n/g, '<br>');
-        
         return html;
+    }
+
+    // --- Grok 功能 ---
+    function openGrok() {
+        const txt = document.getElementById('hiddenPrompt').value;
+        if (!txt) { alert("請先選擇經文"); return; }
+        
+        // 1. 執行複製
+        fallbackCopy(txt, () => {
+            // 2. 複製成功後，打開 Grok
+            alert("✅ 指令已複製！\n即將打開 Grok，請在對話框按「貼上」(Ctrl+V) 即可。");
+            window.open('https://grok.com', '_blank');
+        });
     }
 
     // --- 複製功能 ---
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) return;
-
         const onSuccess = () => {
             const btn = document.getElementById('copyBtn');
             const originalText = "📋 僅複製指令";
             btn.innerText = "✅ 成功";
             btn.style.backgroundColor = "#27ae60";
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.backgroundColor = "";
-            }, 2000);
+            setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 2000);
         };
-
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(txt).then(onSuccess).catch(() => fallbackCopy(txt, onSuccess));
         } else {
