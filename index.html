@@ -1,275 +1,502 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📖 聖經 + AI 解釋 + 地圖</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Inter', sans-serif; background:#f8f8f8; margin:0; }
-    .no-scrollbar::-webkit-scrollbar { display:none; }
-    #explainButton, #geoButton { font-size: 0.9rem; padding: 0.3rem 1rem; }
-    #bibleSection { background: #e6f0ff; height: 50svh; display:flex; flex-direction:column; padding:12px; box-sizing:border-box; }
-    #bibleContent { flex:1; overflow-y:auto; background:white; padding:12px; border-radius:8px; box-shadow: inset 0 0 3px rgba(0,0,0,0.1); }
-    #aiSection { background: #e6f0ff; height: 50svh; display:flex; flex-direction:column; padding:12px; box-sizing:border-box; }
-    #output { flex:1; overflow-y:auto; background:white; padding:12px; border-radius:8px; box-shadow: inset 0 0 3px rgba(0,0,0,0.1); font-size:0.95rem; margin-bottom:8px; }
-    #versionTag { position: fixed; bottom: 2px; right: 6px; font-size: 0.7rem; color: gray; background: rgba(255,255,255,0.5); padding: 2px 4px; border-radius: 3px; }
-  </style>
-</head>
-<body class="flex flex-col h-screen">
-<div class="flex-1 flex flex-col overflow-hidden">
-  <div id="bibleSection" class="shadow-md rounded-b-lg">
-    <h1 class="text-2xl font-bold text-center mb-3 text-blue-700">📖 聖經閱讀器 (By Grok)</h1>
-    <div id="loadError" class="hidden bg-red-100 text-red-700 p-2 mb-2 rounded"></div>
-    <div class="grid grid-cols-3 gap-3 mb-3">
-      <select id="bookSelect" class="p-3 border rounded-lg shadow-sm w-full"><option value="">請選擇書卷</option></select>
-      <select id="chapterSelect" class="p-3 border rounded-lg shadow-sm w-full" disabled><option value="">請選擇章節</option></select>
-      <select id="verseSelect" class="p-3 border rounded-lg shadow-sm w-full" disabled><option value="">全部經文</option></select>
-    </div>
-    <div class="flex justify-between items-center mb-2">
-      <button id="prevChapter" class="bg-gray-300 px-3 py-1 rounded disabled:opacity-40" disabled>上一章</button>
-      <div class="flex gap-2">
-        <button id="nextChapter" class="bg-gray-300 px-3 py-1 rounded disabled:opacity-40" disabled>下一章</button>
-        <button id="explainButton" class="bg-gradient-to-r from-green-500 to-green-700 text-white rounded shadow disabled:opacity-40" disabled>AI解釋</button>
-        <button id="geoButton" class="bg-gradient-to-r from-blue-400 to-blue-700 text-white rounded shadow disabled:opacity-40" disabled>地理位置</button>
-      </div>
-    </div>
-    <div id="bibleContent" class="no-scrollbar text-lg leading-relaxed">
-      📖 請先選擇書卷和章節來閱讀聖經。
-    </div>
-  </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聖經 AI 深度研讀 (V9 - Gemini整合版)</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #8e44ad;
+            --gemini-color: #d96570; /* Gemini 品牌色調類似 */
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+            padding-bottom: 100px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 20px; }
 
-  <div id="aiSection" class="rounded-t-lg shadow-md">
-    <div id="output" class="no-scrollbar"></div>
-    <div id="loadingIndicator" class="hidden text-center mt-1 text-blue-600 text-sm">🤔 AI 正在思考中...</div>
-  </div>
+        /* 載入狀態 */
+        .loading-container { text-align: center; margin: 20px 0; }
+        .progress-bar { width: 100%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+
+        /* 控制面板 */
+        .controls {
+            background: var(--card); padding: 20px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 20px;
+            opacity: 0.5; pointer-events: none; transition: opacity 0.3s;
+        }
+        .controls.active { opacity: 1; pointer-events: all; }
+        
+        .full-width { grid-column: 1 / -1; }
+        .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
+        
+        select, button {
+            padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 16px; width: 100%; background: #fff;
+        }
+        button {
+            background-color: var(--primary); color: white; border: none;
+            font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+        button:hover { opacity: 0.9; }
+
+        /* 經文卡片 */
+        .scripture-card {
+            background: var(--card); padding: 25px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+            display: none; border-left: 5px solid var(--accent);
+            position: relative;
+        }
+
+        /* 按鈕區 (置頂) */
+        .action-area { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px;
+            margin-bottom: 20px; 
+        }
+        .copy-btn {
+            background-color: var(--accent); font-size: 1rem; padding: 12px;
+            margin-top: 0;
+        }
+        .ai-btn {
+            background-color: #f39c12; /* 金色 */
+            color: white; font-size: 1rem; padding: 12px;
+            margin-top: 0;
+            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+        }
+        .ai-btn:hover { background-color: #e67e22; }
+
+        .ref-title {
+            font-size: 1.3rem; font-weight: bold; color: var(--accent);
+            margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;
+        }
+        .scripture-text {
+            font-size: 1.15rem; line-height: 1.9; white-space: pre-wrap; color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        /* 底部 Gemini 區塊 */
+        .gemini-section {
+            display: none;
+            background: linear-gradient(to bottom right, #ffffff, #fdfbf7);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+            margin-top: 20px;
+        }
+        .gemini-header {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.2rem; font-weight: bold; color: #333;
+            margin-bottom: 15px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;
+        }
+        .gemini-content {
+            font-size: 1.05rem; line-height: 1.8; color: #444;
+        }
+        /* 簡單的 Markdown 樣式 */
+        .gemini-content h1, .gemini-content h2, .gemini-content h3 { color: #2c3e50; margin-top: 20px; font-size: 1.1em; }
+        .gemini-content strong { color: #c0392b; }
+        .gemini-content ul { padding-left: 20px; }
+        .gemini-content li { margin-bottom: 8px; }
+
+        /* 載入動畫 */
+        .ai-loading {
+            text-align: center; padding: 20px; font-style: italic; color: #666; display: none;
+        }
+        .ai-spinner {
+            display: inline-block; width: 20px; height: 20px;
+            border: 3px solid #f3f3f3; border-top: 3px solid #f39c12;
+            border-radius: 50%; animation: spin 1s linear infinite;
+            margin-right: 10px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 底部版本水印 */
+        .footer-note {
+            text-align: right; font-size: 0.75rem; color: #aaa;
+            border-top: 1px solid #f0f0f0; padding-top: 10px; font-style: italic;
+        }
+
+        @media (max-width: 600px) { 
+            .controls { grid-template-columns: 1fr; } 
+            .action-area { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📖 聖經 AI 深度研讀</h1>
+    <div class="subtitle">資料來源：和合本繁體 (Github/cokcok1)</div>
+
+    <div id="loadingArea" class="loading-container">
+        <div id="loadingText">正在下載資料庫 (4.5MB)...</div>
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+    </div>
+
+    <div id="controlPanel" class="controls">
+        <select id="bookSelect" class="full-width" onchange="updateChapters()"><option>載入中...</option></select>
+        <select id="chapterSelect" class="full-width" onchange="updateStartVerses()"><option>-</option></select>
+        
+        <div class="verse-group">
+            <select id="startVerseSelect" onchange="updateEndVerses()"><option>-</option></select>
+            <span id="toLabel" style="display:none;">至</span>
+            <select id="endVerseSelect" style="display:none;"><option>-</option></select>
+        </div>
+
+        <button class="full-width" onclick="displayScripture()">閱讀經文</button>
+    </div>
+
+    <div id="resultCard" class="scripture-card">
+        
+        <div id="actionArea" class="action-area">
+            <button class="ai-btn" onclick="callGeminiAPI()">✨ 立即 AI 解經</button>
+            <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
+        </div>
+
+        <div class="ref-title" id="displayRef"></div>
+        <div class="scripture-text" id="displayText"></div>
+
+        <div id="geminiSection" class="gemini-section">
+            <div class="gemini-header">
+                <span>🤖 Gemini 2.0 Flash 解讀</span>
+            </div>
+            
+            <div id="aiLoading" class="ai-loading">
+                <div class="ai-spinner"></div> 正在連線 Google Gemini 思考神學意涵...
+            </div>
+            
+            <div id="geminiResult" class="gemini-content"></div>
+        </div>
+
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考</div>
+    </div>
 </div>
 
-<div id="versionTag">Powered by Grok AI解釋內容只供參考 2216</div>
+<textarea id="hiddenPrompt" style="display:none;"></textarea>
 
-<script type="module">
-const GROK_MODEL = "grok-3-mini";
-// ✨ 請將以下 URL 替換為你的 Cloudflare Worker 網址
-const PROXY_URL = "/api/grok";
+<script>
+    // --- API 設定 (使用者專用) ---
+    const GEMINI_KEY = "AIzaSyBURyCnTRY5pO0OZjyMRI37jYEU_tWShhg";
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
+    const BIBLE_URL = 'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt';
+    let bibleData = {};
+    let bookOrder = [];
 
-const bookSelect=document.getElementById('bookSelect');
-const chapterSelect=document.getElementById('chapterSelect');
-const verseSelect=document.getElementById('verseSelect');
-const bibleContentDiv=document.getElementById('bibleContent');
-const outputDiv=document.getElementById('output');
-const explainButton=document.getElementById('explainButton');
-const geoButton=document.getElementById('geoButton');
-const loading=document.getElementById('loadingIndicator');
-const prevBtn=document.getElementById('prevChapter');
-const nextBtn=document.getElementById('nextChapter');
-const loadError=document.getElementById('loadError');
-let bibleData={};
+    // 初始化：設定日期
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today}`;
 
-// 解析 TXT
-function parseBibleTXT(text){
-  const lines=text.split('\n');
-  const data={};
-  lines.forEach(l=>{
-    const m=l.match(/^(.+?)(?:\s)?(\d+):(\d+)\s(.+)$/);
-    if(m){
-      const[_,book,ch,vs,ct]=m;
-      data[book]=data[book]||{};
-      data[book][ch]=data[book][ch]||{};
-      data[book][ch][vs]=`${vs} ${ct}`;
+    window.onload = async function() {
+        try {
+            const response = await fetch(BIBLE_URL);
+            if (!response.ok) throw new Error("網絡下載失敗");
+            
+            const reader = response.body.getReader();
+            const contentLength = +response.headers.get('Content-Length');
+            let receivedLength = 0;
+            let chunks = [];
+            
+            while(true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                receivedLength += value.length;
+                if (contentLength) {
+                    document.getElementById('progressFill').style.width = (receivedLength / contentLength * 100) + "%";
+                }
+            }
+            
+            document.getElementById('loadingText').innerText = "解析結構中...";
+            let text = new TextDecoder("utf-8").decode(concatUint8Arrays(chunks));
+            parseBibleText(text);
+            
+            document.getElementById('loadingArea').style.display = 'none';
+            document.getElementById('controlPanel').className += ' active';
+            initSelectors();
+
+        } catch (e) {
+            document.getElementById('loadingText').innerText = "錯誤：" + e.message;
+        }
+    };
+
+    function concatUint8Arrays(arrays) {
+        let totalLength = arrays.reduce((acc, val) => acc + val.length, 0);
+        let result = new Uint8Array(totalLength);
+        let len = 0;
+        for (let arr of arrays) { result.set(arr, len); len += arr.length; }
+        return result;
     }
-  });
-  return data;
-}
 
-// 載入經文
-async function loadBible(){
-  try{
-    const res=await fetch('chinese_union_trad_trad.txt');
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw=await res.text();
-    bibleData=parseBibleTXT(raw);
-    for(const b in bibleData){
-      let o=document.createElement('option');
-      o.value=b;o.textContent=b;
-      bookSelect.appendChild(o);
+    function parseBibleText(rawText) {
+        const lines = rawText.split('\n');
+        const lineRegex = /^(.+?)\s+(\d+):(\d+)\s+(.*)$/;
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+            const match = line.match(lineRegex);
+            if (match) {
+                const book = match[1];
+                const chapter = parseInt(match[2]);
+                const verse = parseInt(match[3]);
+                const content = match[4];
+
+                if (!bibleData[book]) { bibleData[book] = {}; bookOrder.push(book); }
+                if (!bibleData[book][chapter]) { bibleData[book][chapter] = {}; }
+                bibleData[book][chapter][verse] = content;
+            }
+        });
     }
-  }catch(e){
-    loadError.textContent="❌ 聖經載入失敗："+e.message;
-    loadError.classList.remove('hidden');
-  }
-}
-loadBible();
 
-// 書卷選擇
-bookSelect.addEventListener('change',()=>{
-  const b=bookSelect.value;
-  chapterSelect.innerHTML='<option value="">請選擇章節</option>';
-  verseSelect.innerHTML='<option value="">全部經文</option>';
-  bibleContentDiv.textContent="📖 請選擇章節";
-  verseSelect.disabled=true;
-  explainButton.disabled=true;
-  geoButton.disabled=true;
-  if(!b){chapterSelect.disabled=true;return;}
-  chapterSelect.disabled=false;
-  Object.keys(bibleData[b]).forEach(ch=>{
-    let o=document.createElement('option');
-    o.value=ch;o.textContent=`第${ch}章`;
-    chapterSelect.appendChild(o);
-  });
-});
+    const bookSel = document.getElementById('bookSelect');
+    const chapSel = document.getElementById('chapterSelect');
+    const startVerSel = document.getElementById('startVerseSelect');
+    const endVerSel = document.getElementById('endVerseSelect');
+    const toLabel = document.getElementById('toLabel');
 
-// 章節選擇
-chapterSelect.addEventListener('change',()=>{
-  const b=bookSelect.value;const ch=chapterSelect.value;
-  if(!b||!ch)return;
-  verseSelect.innerHTML='<option value="">全部經文</option>';
-  Object.keys(bibleData[b][ch]).forEach(v=>{
-    let o=document.createElement('option');
-    o.value=v;o.textContent=`第${v}節`;
-    verseSelect.appendChild(o);
-  });
-  verseSelect.disabled=false;
-  showChapter();
-});
+    function initSelectors() {
+        bookSel.innerHTML = "";
+        bookOrder.forEach(bk => {
+            let op = document.createElement('option');
+            op.value = bk; op.text = bk; bookSel.add(op);
+        });
+        updateChapters();
+    }
 
-// 顯示內容
-verseSelect.addEventListener('change',()=>showChapter());
+    function updateChapters() {
+        const book = bookSel.value;
+        chapSel.innerHTML = "";
+        const chaps = Object.keys(bibleData[book]).map(Number).sort((a,b)=>a-b);
+        chaps.forEach(ch => {
+            let op = document.createElement('option');
+            op.value = ch; op.text = `第 ${ch} 章`; chapSel.add(op);
+        });
+        updateStartVerses();
+    }
 
-function showChapter(){
-  const b=bookSelect.value;const ch=chapterSelect.value;const v=verseSelect.value;
-  if(!b||!ch){bibleContentDiv.textContent="📖 請選擇書卷和章節";return;}
-  if(v){
-    bibleContentDiv.innerHTML=`<p>${bibleData[b][ch][v]}</p>`;
-  }else{
-    bibleContentDiv.innerHTML=Object.values(bibleData[b][ch]).map(t=>`<p>${t}</p>`).join('');
-  }
-  explainButton.disabled=false;
-  geoButton.disabled=false;
-  prevBtn.disabled=!bibleData[b][parseInt(ch)-1];
-  nextBtn.disabled=!bibleData[b][parseInt(ch)+1];
-}
-prevBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)-1;verseSelect.value="";showChapter();};
-nextBtn.onclick=()=>{chapterSelect.value=parseInt(chapterSelect.value)+1;verseSelect.value="";showChapter();};
+    function updateStartVerses() {
+        const book = bookSel.value;
+        const chap = chapSel.value;
+        startVerSel.innerHTML = '<option value="all">整章 (Whole Chapter)</option>';
+        if (bibleData[book] && bibleData[book][chap]) {
+            const verses = Object.keys(bibleData[book][chap]).map(Number).sort((a,b)=>a-b);
+            verses.forEach(v => {
+                let op = document.createElement('option');
+                op.value = v; op.text = `第 ${v} 節`; startVerSel.add(op);
+            });
+        }
+        updateEndVerses();
+    }
 
-// ✅ AI 解釋（使用 Cloudflare Worker 代理）
-explainButton.onclick=async()=>{
-  const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
-  let passage=bibleContentDiv.innerText;
-  if(!b||!ch){
-    outputDiv.textContent="❌ 請先選擇書卷和章節！";
-    return;
-  }
-  if(passage.length>4000) passage=passage.substring(0,4000)+" ...（內容已截斷）";
+    function updateEndVerses() {
+        const startVal = startVerSel.value;
+        if (startVal === "all") {
+            endVerSel.style.display = "none";
+            toLabel.style.display = "none";
+            return;
+        }
+        endVerSel.style.display = "block";
+        toLabel.style.display = "block";
+        endVerSel.innerHTML = "";
+        const book = bookSel.value;
+        const chap = chapSel.value;
+        const startNum = parseInt(startVal);
+        if (bibleData[book] && bibleData[book][chap]) {
+            const verses = Object.keys(bibleData[book][chap]).map(Number).sort((a,b)=>a-b);
+            verses.forEach(v => {
+                if (v >= startNum) {
+                    let op = document.createElement('option');
+                    op.value = v; op.text = `第 ${v} 節`; endVerSel.add(op);
+                }
+            });
+        }
+    }
 
-  loading.classList.remove("hidden");
-  outputDiv.innerHTML="🤔 AI 正在思考中...";
+    function displayScripture() {
+        // 重置 Gemini 區域
+        document.getElementById('geminiSection').style.display = 'none';
+        document.getElementById('geminiResult').innerHTML = '';
 
-  const target=v?`第${v}節`:`第${ch}章`;
-  const prompt=v?
-`請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經 ${b} ${target}。
+        const book = bookSel.value;
+        const chap = chapSel.value;
+        const startVer = startVerSel.value;
+        let displayText = "";
+        let refText = "";
+        let promptText = "";
 
-📌 如果是特定節，請提供：
-- 【經文解釋】詳細闡述該節的含義。
-- 【神學與啟示】說明屬靈及神學重點。
-- 【背景與引用】補充歷史背景及相關經文支持。
-- 【應用與反思】給出屬靈應用與默想方向。
+        if (startVer === "all") {
+            refText = `${book} 第 ${chap} 章`;
+            const verses = bibleData[book][chap];
+            Object.keys(verses).map(Number).sort((a,b)=>a-b).forEach(v => {
+                displayText += `<span style='color:#999;font-size:0.8em;'>[${v}]</span> ${verses[v]}\n`;
+                promptText += `${v}. ${verses[v]}\n`;
+            });
+        } else {
+            const startNum = parseInt(startVer);
+            const endNum = parseInt(endVerSel.value);
+            if (startNum === endNum) {
+                 refText = `${book} 第 ${chap} 章 第 ${startNum} 節`;
+            } else {
+                 refText = `${book} 第 ${chap} 章 ${startNum}-${endNum} 節`;
+            }
+            for (let i = startNum; i <= endNum; i++) {
+                if (bibleData[book][chap][i]) {
+                    displayText += `<span style='color:#999;font-size:0.8em;'>[${i}]</span> ${bibleData[book][chap][i]}\n`;
+                    promptText += `${i}. ${bibleData[book][chap][i]}\n`;
+                }
+            }
+        }
 
-⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
-經文內容如下：
-${passage}`
-:
-`請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經 ${b} ${target}。
+        document.getElementById('resultCard').style.display = 'block';
+        document.getElementById('displayRef').innerText = refText;
+        document.getElementById('displayText').innerHTML = displayText;
+        document.getElementById('actionArea').style.display = 'grid'; // 確保按鈕顯示
 
-📌 如果是整章，請提供：
+        generateHiddenPrompt(refText, promptText);
+    }
+
+    function generateHiddenPrompt(ref, text) {
+        const prompt = `請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經【${ref}】。
+
+經文內容：
+"${text.replace(/\n/g, ' ')}"
+
+請提供：
 - 【經文概要】概述此章內容與主要事件。
 - 【經文解釋】詳細闡述該節的含義。
 - 【神學重點】指出核心神學信息、救恩啟示及屬靈信息。
 - 【歷史文化背景】補充與理解本章相關的背景資料。
 - 【引用】列出其他聖經相關經文，並說明其關聯。
 - 【屬靈應用】提供如何將此章的信息應用於信徒生活。
-- 【默想與反思問題】提出2-3個引導思考與靈修的問題。
+- 【默想與反思問題】提出2-3個引導思考與靈修的問題。`;
 
-⚠️ 回覆必須根據聖經權威和基督教信仰原則撰寫。
-經文內容如下：
-${passage}`;
-  
-  try{
-    const payload = { 
-      model: GROK_MODEL,
-      messages: [{
-        role: "user",
-        content: prompt
-      }]
-    };
-    const res=await fetch(PROXY_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    if(!res.ok) {
-        const errorText = await res.text();
-        // 嘗試解析錯誤訊息
+        document.getElementById('hiddenPrompt').value = prompt;
+    }
+
+    // --- Gemini API 呼叫邏輯 ---
+    async function callGeminiAPI() {
+        const prompt = document.getElementById('hiddenPrompt').value;
+        if(!prompt) { alert("請先閱讀經文"); return; }
+
+        // 顯示載入中
+        const section = document.getElementById('geminiSection');
+        const loading = document.getElementById('aiLoading');
+        const result = document.getElementById('geminiResult');
+        
+        section.style.display = 'block';
+        loading.style.display = 'block';
+        result.innerHTML = '';
+        
+        // 捲動到底部
+        section.scrollIntoView({ behavior: 'smooth' });
+
         try {
-            const errorData = JSON.parse(errorText);
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
-        } catch {
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+            const payload = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            const response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+            const data = await response.json();
+            
+            // 解析 Gemini 回傳的結構
+            const rawMarkdown = data.candidates[0].content.parts[0].text;
+            
+            // 簡單渲染 Markdown (粗體, 標題, 分點)
+            const htmlContent = parseMarkdown(rawMarkdown);
+            
+            result.innerHTML = htmlContent;
+
+        } catch (error) {
+            result.innerHTML = `<span style="color:red;">錯誤：無法連接 Gemini API (${error.message})。請檢查您的網絡或 API Key。</span>`;
+        } finally {
+            loading.style.display = 'none';
         }
     }
-    const data=await res.json();
-    outputDiv.innerHTML = data.choices?.[0]?.message?.content.replace(/\n/g,"<br>") || "⚠️ AI 沒有回覆";
-  }catch(e){
-    outputDiv.textContent="❌ AI 解釋失敗："+e.message;
-  }
-  loading.classList.add("hidden");
-};
 
-// ✅ 地理背景（使用 Cloudflare Worker 代理）
-geoButton.onclick=async()=>{
-  const b=bookSelect.value,ch=chapterSelect.value,v=verseSelect.value;
-  if(!b||!ch){
-    outputDiv.textContent="❌ 請先選擇書卷和章節！";
-    return;
-  }
-  loading.classList.remove("hidden");
-  outputDiv.innerHTML="🌍 正在獲取地理資料...";
+    // 簡單的 Markdown 轉 HTML 輔助函數
+    function parseMarkdown(text) {
+        // 處理粗體 **text**
+        let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // 處理標題 ## Title
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+        html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+        // 處理列表 * item
+        html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+        html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+        // 換行轉 <br> (除了標題和列表)
+        html = html.replace(/\n/g, '<br>');
+        
+        return html;
+    }
 
-  try{
-    const target=v?`第${v}節`:`第${ch}章`;
-    const prompt=`請提供《${b} ${target}》的地理背景資訊，描述出現的地名及其現代位置（僅文字，無需任何連結）：`;
-    const payload={
-      model: GROK_MODEL,
-      messages:[{
-        role: "user",
-        content: prompt
-      }]
-    };
-    const res=await fetch(PROXY_URL,{
-        method:"POST",
-        headers:{ 'Content-Type':'application/json' },
-        body:JSON.stringify(payload)
-    });
-    if(!res.ok) {
-        const errorText = await res.text();
-        try {
-            const errorData = JSON.parse(errorText);
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${JSON.stringify(errorData)}`);
-        } catch {
-            throw new Error(`API 錯誤：HTTP ${res.status} - ${errorText}`);
+    // --- 複製功能 ---
+    function copyPrompt() {
+        const txt = document.getElementById('hiddenPrompt').value;
+        if (!txt) return;
+
+        const onSuccess = () => {
+            const btn = document.getElementById('copyBtn');
+            const originalText = "📋 僅複製指令";
+            btn.innerText = "✅ 成功";
+            btn.style.backgroundColor = "#27ae60";
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.backgroundColor = "";
+            }, 2000);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(txt).then(onSuccess).catch(() => fallbackCopy(txt, onSuccess));
+        } else {
+            fallbackCopy(txt, onSuccess);
         }
     }
-    const data=await res.json();
-    let geoText = data.choices?.[0]?.message?.content || "⚠️ 無回覆";
-    outputDiv.innerHTML="<strong>📍 地理位置：</strong><br>"+geoText.replace(/\n/g,"<br>");
-  }catch(e){
-    outputDiv.textContent="❌ 地理資料獲取失敗："+e.message;
-  }
-  loading.classList.add("hidden");
-};
+
+    function fallbackCopy(text, callback) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            if (document.execCommand('copy')) callback();
+            else alert("複製失敗");
+        } catch (err) { alert("瀏覽器不支援"); }
+        document.body.removeChild(textArea);
+    }
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
+
 </body>
 </html>
