@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V13)</title>
+    <title>聖經研讀 (V12)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -15,56 +15,40 @@
 
     <style>
         :root {
-            /* 玻璃擬態配色方案 */
-            --primary-glass: rgba(255, 255, 255, 0.1);
-            --accent-purple: #bd60d6;
-            --accent-gold: #f3ba2f;
-            --accent-dark: #2a2a2a;
-            --text-light: #ffffff;
-            --text-dim: #e0e0e0;
-            --glass-border: 1px solid rgba(255, 255, 255, 0.18);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            --glass-blur: blur(12px);
+            --primary: #2c3e50;
+            --accent: #8e44ad;
+            --gemini-color: #d96570;
+            --grok-color: #000000;
+            --nav-btn-color: #95a5a6;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #333;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            /* 深色流動漸層背景 */
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            background-attachment: fixed; /* 背景固定，讓玻璃滑動時更有感 */
+            background-color: var(--bg);
             margin: 0;
             padding: 20px;
-            color: var(--text-light);
+            color: var(--text);
             padding-bottom: 120px;
             -webkit-text-size-adjust: 100%;
-            min-height: 100vh;
         }
         .container { max-width: 800px; margin: 0 auto; }
         
-        /* 標題改為白色 */
-        h1 { text-align: center; color: var(--text-light); font-size: 1.5rem; margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .subtitle { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin-bottom: 20px; }
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 20px; }
 
         /* 載入狀態 */
         .loading-container { text-align: center; margin: 20px 0; }
-        .progress-bar { width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; overflow: hidden; margin-top: 10px; }
-        .progress-fill { height: 100%; background: var(--accent-purple); width: 0%; transition: width 0.3s; box-shadow: 0 0 10px var(--accent-purple); }
+        .progress-bar { width: 100%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden; margin-top: 10px; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
 
-        /* --- 核心玻璃擬態樣式 --- */
-        .glass-panel {
-            background: var(--primary-glass);
-            box-shadow: var(--glass-shadow);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur); /* 支援 Safari */
-            border-radius: 16px;
-            border: var(--glass-border);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        /* 控制面板 (應用玻璃樣式，保持 Grid 佈局) */
+        /* 控制面板 */
         .controls {
+            background: var(--card); padding: 20px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 20px;
             opacity: 0.5; pointer-events: none; transition: opacity 0.3s;
         }
         .controls.active { opacity: 1; pointer-events: all; }
@@ -72,113 +56,92 @@
         .full-width { grid-column: 1 / -1; }
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
-        /* 玻璃化輸入框和按鈕 */
-        select, .nav-btn, .read-btn {
-            padding: 12px; 
-            border-radius: 12px;
-            font-size: 16px; width: 100%;
-            background: rgba(255, 255, 255, 0.15); /* 比面板稍微亮一點 */
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--text-light);
-            backdrop-filter: blur(5px);
-            -webkit-appearance: none; /* iOS 需要這個來讓玻璃效果應用到 select */
-            appearance: none;
-            /* 重新加入自定義箭頭 */
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
+        /* 修正點：移除了 -webkit-appearance: none; 讓樣式回歸 V11 */
+        select {
+            padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 16px; width: 100%; background: #fff;
         }
-        /* 確保手機上選單內的文字是黑色的，否則看不到 */
-        select option { background-color: #fff; color: #333; }
 
         /* 導航按鈕組 */
-        .nav-row { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 5px; }
+        .nav-row {
+            grid-column: 1 / -1;
+            display: flex; gap: 10px; margin-top: 5px;
+        }
         .read-btn {
-            flex-grow: 2; font-weight: bold; cursor: pointer;
-            background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1)); /* 微漸層增加立體感 */
+            flex-grow: 2; background-color: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
         .nav-btn {
-            flex-grow: 0; min-width: 60px; font-size: 18px; font-weight: bold; cursor: pointer;
-            text-align: center;
+            flex-grow: 0; min-width: 60px;
+            background-color: var(--nav-btn-color); color: white; border: none;
+            padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .read-btn:hover, .nav-btn:hover, select:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
+        .read-btn:hover { background-color: #34495e; }
+        .nav-btn:hover { background-color: #7f8c8d; }
 
-        /* 經文卡片 (應用玻璃樣式) */
+        /* 經文卡片 */
         .scripture-card {
-            display: none; 
-            border-left: 5px solid var(--accent-purple); /* 強調色邊框 */
+            background: var(--card); padding: 25px; border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+            display: none; border-left: 5px solid var(--accent);
             position: relative;
         }
 
-        /* 下方功能按鈕區 (保持 Grid 佈局) */
+        /* 下方功能按鈕區 */
         .action-area { 
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
         }
         
-        /* 彩色玻璃按鈕樣式 */
-        .glass-btn-colored {
+        .ai-btn, .copy-btn, .grok-btn {
             font-size: 0.9rem; padding: 12px;
-            margin-top: 0; color: white; 
-            border-radius: 12px;
+            margin-top: 0; color: white; border: none; border-radius: 8px;
             display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.4); /* 內部發光製造立體感 */
-            backdrop-filter: blur(5px);
-            font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            transition: all 0.2s;
         }
-        .glass-btn-colored:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.5); }
-        .glass-btn-colored:active { transform: translateY(0px); }
 
-        /* 各別按鈕顏色 (半透明色彩) */
-        .ai-btn { background: linear-gradient(135deg, rgba(243, 186, 47, 0.6), rgba(243, 156, 18, 0.8)); }
-        .grok-btn { background: linear-gradient(135deg, rgba(67, 67, 67, 0.6), rgba(0, 0, 0, 0.8)); }
-        .copy-btn { background: linear-gradient(135deg, rgba(190, 96, 214, 0.6), rgba(142, 68, 173, 0.8)); }
-
+        .ai-btn { background-color: #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
+        .grok-btn { background-color: var(--grok-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+        .copy-btn { background-color: var(--accent); }
 
         .ref-title {
-            font-size: 1.3rem; font-weight: bold; color: var(--accent-purple);
-            margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;
-            text-shadow: 0 0 10px rgba(189, 96, 214, 0.5); /* 發光效果 */
+            font-size: 1.3rem; font-weight: bold; color: var(--accent);
+            margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;
         }
         .scripture-text {
-            font-size: 1.15rem; line-height: 1.9; white-space: pre-wrap; color: var(--text-light);
+            font-size: 1.15rem; line-height: 1.9; white-space: pre-wrap; color: #2c3e50;
             margin-bottom: 30px;
         }
 
-        /* Gemini 區塊 (應用玻璃樣式，顏色稍微不同以示區別) */
+        /* Gemini 區塊 */
         .gemini-section {
             display: none;
-            background: rgba(255, 255, 255, 0.05); /* 稍微暗一點 */
-            margin-top: 20px;
+            background: linear-gradient(to bottom right, #ffffff, #fdfbf7);
+            padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid #eee; margin-top: 20px;
         }
         .gemini-header {
             display: flex; align-items: center; gap: 10px;
-            font-size: 1.2rem; font-weight: bold; color: var(--text-light);
-            margin-bottom: 15px; border-bottom: 1px solid var(--accent-gold); padding-bottom: 10px;
+            font-size: 1.2rem; font-weight: bold; color: #333;
+            margin-bottom: 15px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;
         }
-        .gemini-content { font-size: 1.05rem; line-height: 1.8; color: var(--text-dim); }
-        .gemini-content h1, .gemini-content h2, .gemini-content h3 { color: var(--text-light); margin-top: 20px; font-size: 1.1em; }
-        .gemini-content strong { color: var(--accent-gold); } /* 強調色改為金色 */
+        .gemini-content { font-size: 1.05rem; line-height: 1.8; color: #444; }
+        .gemini-content h1, .gemini-content h2, .gemini-content h3 { color: #2c3e50; margin-top: 20px; font-size: 1.1em; }
+        .gemini-content strong { color: #c0392b; }
         .gemini-content ul { padding-left: 20px; }
         .gemini-content li { margin-bottom: 8px; }
 
-        .ai-loading { text-align: center; padding: 20px; font-style: italic; color: var(--text-dim); display: none; }
+        .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #666; display: none; }
         .ai-spinner {
             display: inline-block; width: 20px; height: 20px;
-            border: 3px solid rgba(255,255,255,0.2); border-top: 3px solid var(--accent-gold);
+            border: 3px solid #f3f3f3; border-top: 3px solid #f39c12;
             border-radius: 50%; animation: spin 1s linear infinite;
             margin-right: 10px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .footer-note {
-            text-align: right; font-size: 0.75rem; color: rgba(255,255,255,0.5);
-            border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; font-style: italic;
+            text-align: right; font-size: 0.75rem; color: #aaa;
+            border-top: 1px solid #f0f0f0; padding-top: 10px; font-style: italic;
         }
 
         @media (max-width: 600px) { 
@@ -190,7 +153,7 @@
 <body>
 
 <div class="container">
-    <h1>📖 聖經研讀 v13</h1>
+    <h1>📖 聖經研讀</h1>
     <div class="subtitle">資料來源：和合本繁體</div>
 
     <div id="loadingArea" class="loading-container">
@@ -198,7 +161,7 @@
         <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
     </div>
 
-    <div id="controlPanel" class="controls glass-panel">
+    <div id="controlPanel" class="controls">
         <select id="bookSelect" class="full-width" onchange="updateChapters()"><option>載入中...</option></select>
         <select id="chapterSelect" class="full-width" onchange="updateStartVerses()"><option>-</option></select>
         
@@ -215,18 +178,18 @@
         </div>
     </div>
 
-    <div id="resultCard" class="scripture-card glass-panel">
+    <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
-            <button class="glass-btn-colored ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港用戶)</button>
-            <button class="glass-btn-colored grok-btn" onclick="openGrok()">🚀 複製並前往 Grok</button>
-            <button class="glass-btn-colored copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
+            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港用戶)</button>
+            <button class="grok-btn" onclick="openGrok()">🚀 複製並前往 Grok</button>
+            <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
         <div class="ref-title" id="displayRef"></div>
         <div class="scripture-text" id="displayText"></div>
 
-        <div id="geminiSection" class="gemini-section glass-panel">
+        <div id="geminiSection" class="gemini-section">
             <div class="gemini-header">
                 <span>🤖 Gemini 2.0 Flash 解讀</span>
             </div>
@@ -243,7 +206,7 @@
 <textarea id="hiddenPrompt" style="display:none;"></textarea>
 
 <script>
-    // --- JavaScript 邏輯完全保持 V12 不變 ---
+    // --- API 設定 ---
     const GEMINI_KEY = "AIzaSyBURyCnTRY5pO0OZjyMRI37jYEU_tWShhg";
     const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
@@ -252,7 +215,7 @@
     let bookOrder = [];
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V13-Glass)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V12-fix)`;
 
     window.onload = async function() {
         try {
@@ -470,6 +433,7 @@
         document.getElementById('hiddenPrompt').value = prompt;
     }
 
+    // --- Gemini API ---
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         if(!prompt) { alert("請先閱讀經文"); return; }
@@ -511,6 +475,7 @@
         return html;
     }
 
+    // --- Grok 功能 ---
     function openGrok() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) { alert("請先選擇經文"); return; }
@@ -520,6 +485,7 @@
         });
     }
 
+    // --- 複製功能 (iPhone 優化版) ---
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) return;
@@ -530,6 +496,7 @@
             btn.style.backgroundColor = "#27ae60";
             setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 2000);
         };
+        // 優先嘗試現代 API
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(txt).then(onSuccess).catch(() => fallbackCopy(txt, onSuccess));
         } else {
@@ -540,10 +507,15 @@
     function fallbackCopy(text, callback) {
         const textArea = document.createElement("textarea");
         textArea.value = text;
+        
+        // 針對 iOS 調整樣式，避免無法選取
         textArea.style.position = "absolute";
         textArea.style.left = "-9999px";
-        textArea.setAttribute("readonly", "");
+        textArea.setAttribute("readonly", ""); // 防止鍵盤彈出
+        
         document.body.appendChild(textArea);
+        
+        // iOS 必須使用 range 來選取
         if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
             const range = document.createRange();
             range.selectNodeContents(textArea);
@@ -554,8 +526,13 @@
         } else {
             textArea.select();
         }
-        try { if (document.execCommand('copy')) callback(); else alert("複製失敗"); } 
+        
+        try { 
+            if (document.execCommand('copy')) callback(); 
+            else alert("複製失敗，請手動長按選擇"); 
+        } 
         catch (err) { alert("瀏覽器不支援複製"); }
+        
         document.body.removeChild(textArea);
     }
 </script>
