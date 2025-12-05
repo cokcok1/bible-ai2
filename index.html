@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>聖經 AI 深度研讀 (V10 - Grok/Gemini整合版)</title>
+    <title>聖經 AI 深度研讀 (V11)</title>
     <style>
         :root {
             --primary: #2c3e50;
             --accent: #8e44ad;
             --gemini-color: #d96570;
-            --grok-color: #000000; /* Grok 使用黑色 */
+            --grok-color: #000000;
+            --nav-btn-color: #95a5a6; /* 導航按鈕顏色 (灰色) */
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #333;
@@ -45,15 +46,31 @@
         .full-width { grid-column: 1 / -1; }
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
-        select, button {
+        select {
             padding: 12px; border: 1px solid #ddd; border-radius: 8px;
             font-size: 16px; width: 100%; background: #fff;
         }
-        button {
-            background-color: var(--primary); color: white; border: none;
-            font-weight: bold; cursor: pointer; margin-top: 10px;
+
+        /* 導航按鈕組 (新功能) */
+        .nav-row {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
         }
-        button:hover { opacity: 0.9; }
+        .read-btn {
+            flex-grow: 2; /* 中間按鈕較寬 */
+            background-color: var(--primary); color: white; border: none;
+            padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .nav-btn {
+            flex-grow: 0;
+            min-width: 60px; /* 左右按鈕寬度 */
+            background-color: var(--nav-btn-color); color: white; border: none;
+            padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+        .read-btn:hover { background-color: #34495e; }
+        .nav-btn:hover { background-color: #7f8c8d; }
 
         /* 經文卡片 */
         .scripture-card {
@@ -63,7 +80,7 @@
             position: relative;
         }
 
-        /* 按鈕區 (改為3欄) */
+        /* 下方功能按鈕區 */
         .action-area { 
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr; 
@@ -71,31 +88,19 @@
             margin-bottom: 20px; 
         }
         
-        /* 按鈕樣式 */
         .ai-btn, .copy-btn, .grok-btn {
             font-size: 0.9rem; padding: 12px;
-            margin-top: 0; color: white; border: none;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
+            margin-top: 0; color: white; border: none; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
         }
 
-        /* Gemini 金色 */
-        .ai-btn {
-            background-color: #f39c12; 
-            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
-        }
+        .ai-btn { background-color: #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
         .ai-btn:hover { background-color: #e67e22; }
 
-        /* Grok 黑色 */
-        .grok-btn {
-            background-color: var(--grok-color);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
+        .grok-btn { background-color: var(--grok-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
         .grok-btn:hover { background-color: #333; }
 
-        /* 複製 紫色 */
-        .copy-btn {
-            background-color: var(--accent);
-        }
+        .copy-btn { background-color: var(--accent); }
         .copy-btn:hover { background-color: #732d91; }
 
         .ref-title {
@@ -107,15 +112,13 @@
             margin-bottom: 30px;
         }
 
-        /* 底部 Gemini 區塊 */
+        /* Gemini 區塊 */
         .gemini-section {
             display: none;
             background: linear-gradient(to bottom right, #ffffff, #fdfbf7);
-            padding: 25px;
-            border-radius: 12px;
+            padding: 25px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 1px solid #eee;
-            margin-top: 20px;
+            border: 1px solid #eee; margin-top: 20px;
         }
         .gemini-header {
             display: flex; align-items: center; gap: 10px;
@@ -128,7 +131,6 @@
         .gemini-content ul { padding-left: 20px; }
         .gemini-content li { margin-bottom: 8px; }
 
-        /* 載入動畫 */
         .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #666; display: none; }
         .ai-spinner {
             display: inline-block; width: 20px; height: 20px;
@@ -138,7 +140,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 底部版本水印 */
         .footer-note {
             text-align: right; font-size: 0.75rem; color: #aaa;
             border-top: 1px solid #f0f0f0; padding-top: 10px; font-style: italic;
@@ -146,14 +147,14 @@
 
         @media (max-width: 600px) { 
             .controls { grid-template-columns: 1fr; } 
-            .action-area { grid-template-columns: 1fr; } /* 手機上按鈕垂直排列 */
+            .action-area { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>📖 聖經深度研讀</h1>
+    <h1>📖 聖經研讀</h1>
     <div class="subtitle">資料來源：和合本繁體</div>
 
     <div id="loadingArea" class="loading-container">
@@ -171,16 +172,18 @@
             <select id="endVerseSelect" style="display:none;"><option>-</option></select>
         </div>
 
-        <button class="full-width" onclick="displayScripture()">閱讀經文</button>
+        <div class="nav-row">
+            <button class="nav-btn" onclick="prevChapter()" title="上一章">❮</button>
+            <button class="read-btn" onclick="displayScripture()">閱讀經文</button>
+            <button class="nav-btn" onclick="nextChapter()" title="下一章">❯</button>
+        </div>
     </div>
 
     <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
             <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港用戶)</button>
-            
             <button class="grok-btn" onclick="openGrok()">🚀 複製並前往 Grok</button>
-            
             <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
@@ -214,7 +217,7 @@
 
     // 初始化：設定日期
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V10)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V11)`;
 
     window.onload = async function() {
         try {
@@ -332,6 +335,62 @@
         }
     }
 
+    // --- V11 新增：章節跳轉邏輯 ---
+    function nextChapter() {
+        const currentBook = bookSel.value;
+        const currentChap = parseInt(chapSel.value);
+        
+        // 1. 同一卷書還有下一章
+        if (bibleData[currentBook][currentChap + 1]) {
+            chapSel.value = currentChap + 1;
+        } 
+        // 2. 跳到下一卷書的第一章
+        else {
+            const bookIdx = bookOrder.indexOf(currentBook);
+            if (bookIdx < bookOrder.length - 1) {
+                const nextBook = bookOrder[bookIdx + 1];
+                bookSel.value = nextBook;
+                updateChapters(); // 更新該書卷的章列表
+                chapSel.value = 1; // 設為第1章
+            } else {
+                alert("已經是最後一章了（啟示錄）");
+                return;
+            }
+        }
+        // 重置為整章閱讀並刷新
+        updateStartVerses(); 
+        displayScripture();
+    }
+
+    function prevChapter() {
+        const currentBook = bookSel.value;
+        const currentChap = parseInt(chapSel.value);
+        
+        // 1. 同一卷書還有上一章
+        if (currentChap > 1) {
+            chapSel.value = currentChap - 1;
+        } 
+        // 2. 跳到上一卷書的最後一章
+        else {
+            const bookIdx = bookOrder.indexOf(currentBook);
+            if (bookIdx > 0) {
+                const prevBook = bookOrder[bookIdx - 1];
+                bookSel.value = prevBook;
+                updateChapters(); // 更新該書卷的章列表
+                // 找出該書卷最後一章
+                const chaps = Object.keys(bibleData[prevBook]).map(Number);
+                const lastChap = Math.max(...chaps);
+                chapSel.value = lastChap;
+            } else {
+                alert("已經是第一章了（創世記）");
+                return;
+            }
+        }
+        // 重置為整章閱讀並刷新
+        updateStartVerses();
+        displayScripture();
+    }
+
     function displayScripture() {
         document.getElementById('geminiSection').style.display = 'none';
         document.getElementById('geminiResult').innerHTML = '';
@@ -438,10 +497,7 @@
     function openGrok() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) { alert("請先選擇經文"); return; }
-        
-        // 1. 執行複製
         fallbackCopy(txt, () => {
-            // 2. 複製成功後，打開 Grok
             alert("✅ 指令已複製！\n即將打開 Grok，請在對話框按「貼上」(Ctrl+V) 即可。");
             window.open('https://grok.com', '_blank');
         });
