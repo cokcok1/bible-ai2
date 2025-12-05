@@ -30,7 +30,7 @@
             margin: 0;
             padding: 20px;
             color: var(--text);
-            padding-bottom: 120px; /* 預留更多底部空間給 iOS Home Bar */
+            padding-bottom: 120px;
             -webkit-text-size-adjust: 100%;
         }
         .container { max-width: 800px; margin: 0 auto; }
@@ -56,10 +56,10 @@
         .full-width { grid-column: 1 / -1; }
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
+        /* 修正點：移除了 -webkit-appearance: none; 讓樣式回歸 V11 */
         select {
             padding: 12px; border: 1px solid #ddd; border-radius: 8px;
             font-size: 16px; width: 100%; background: #fff;
-            -webkit-appearance: none; /* iOS 優化 */
         }
 
         /* 導航按鈕組 */
@@ -181,7 +181,7 @@
     <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
-            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港用戶)</button>
+            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港)</button>
             <button class="grok-btn" onclick="openGrok()">🚀 複製並前往 Grok</button>
             <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
@@ -215,7 +215,7 @@
     let bookOrder = [];
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V12)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V12-fix)`;
 
     window.onload = async function() {
         try {
@@ -475,6 +475,7 @@
         return html;
     }
 
+    // --- Grok 功能 ---
     function openGrok() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) { alert("請先選擇經文"); return; }
@@ -484,6 +485,7 @@
         });
     }
 
+    // --- 複製功能 (iPhone 優化版) ---
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) return;
@@ -494,6 +496,7 @@
             btn.style.backgroundColor = "#27ae60";
             setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 2000);
         };
+        // 優先嘗試現代 API
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(txt).then(onSuccess).catch(() => fallbackCopy(txt, onSuccess));
         } else {
@@ -504,14 +507,32 @@
     function fallbackCopy(text, callback) {
         const textArea = document.createElement("textarea");
         textArea.value = text;
-        textArea.style.position = "fixed";
+        
+        // 針對 iOS 調整樣式，避免無法選取
+        textArea.style.position = "absolute";
         textArea.style.left = "-9999px";
-        textArea.style.top = "0";
+        textArea.setAttribute("readonly", ""); // 防止鍵盤彈出
+        
         document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try { if (document.execCommand('copy')) callback(); else alert("複製失敗"); } 
-        catch (err) { alert("瀏覽器不支援"); }
+        
+        // iOS 必須使用 range 來選取
+        if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+            const range = document.createRange();
+            range.selectNodeContents(textArea);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+        } else {
+            textArea.select();
+        }
+        
+        try { 
+            if (document.execCommand('copy')) callback(); 
+            else alert("複製失敗，請手動長按選擇"); 
+        } 
+        catch (err) { alert("瀏覽器不支援複製"); }
+        
         document.body.removeChild(textArea);
     }
 </script>
