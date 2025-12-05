@@ -2,15 +2,24 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>聖經 AI 深度研讀 (V11)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聖經研讀 (V12)</title>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
+    <link rel="icon" type="image/png" href="bible-icon.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="聖經研讀">
+
     <style>
         :root {
             --primary: #2c3e50;
             --accent: #8e44ad;
             --gemini-color: #d96570;
             --grok-color: #000000;
-            --nav-btn-color: #95a5a6; /* 導航按鈕顏色 (灰色) */
+            --nav-btn-color: #95a5a6;
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #333;
@@ -21,7 +30,8 @@
             margin: 0;
             padding: 20px;
             color: var(--text);
-            padding-bottom: 100px;
+            padding-bottom: 120px; /* 預留更多底部空間給 iOS Home Bar */
+            -webkit-text-size-adjust: 100%;
         }
         .container { max-width: 800px; margin: 0 auto; }
         
@@ -49,23 +59,20 @@
         select {
             padding: 12px; border: 1px solid #ddd; border-radius: 8px;
             font-size: 16px; width: 100%; background: #fff;
+            -webkit-appearance: none; /* iOS 優化 */
         }
 
-        /* 導航按鈕組 (新功能) */
+        /* 導航按鈕組 */
         .nav-row {
             grid-column: 1 / -1;
-            display: flex;
-            gap: 10px;
-            margin-top: 5px;
+            display: flex; gap: 10px; margin-top: 5px;
         }
         .read-btn {
-            flex-grow: 2; /* 中間按鈕較寬 */
-            background-color: var(--primary); color: white; border: none;
+            flex-grow: 2; background-color: var(--primary); color: white; border: none;
             padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
         .nav-btn {
-            flex-grow: 0;
-            min-width: 60px; /* 左右按鈕寬度 */
+            flex-grow: 0; min-width: 60px;
             background-color: var(--nav-btn-color); color: white; border: none;
             padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
@@ -82,10 +89,7 @@
 
         /* 下方功能按鈕區 */
         .action-area { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
-            gap: 10px;
-            margin-bottom: 20px; 
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
         }
         
         .ai-btn, .copy-btn, .grok-btn {
@@ -95,13 +99,8 @@
         }
 
         .ai-btn { background-color: #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
-        .ai-btn:hover { background-color: #e67e22; }
-
         .grok-btn { background-color: var(--grok-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
-        .grok-btn:hover { background-color: #333; }
-
         .copy-btn { background-color: var(--accent); }
-        .copy-btn:hover { background-color: #732d91; }
 
         .ref-title {
             font-size: 1.3rem; font-weight: bold; color: var(--accent);
@@ -215,9 +214,8 @@
     let bibleData = {};
     let bookOrder = [];
 
-    // 初始化：設定日期
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V11)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V12)`;
 
     window.onload = async function() {
         try {
@@ -335,60 +333,45 @@
         }
     }
 
-    // --- V11 新增：章節跳轉邏輯 ---
     function nextChapter() {
         const currentBook = bookSel.value;
         const currentChap = parseInt(chapSel.value);
-        
-        // 1. 同一卷書還有下一章
         if (bibleData[currentBook][currentChap + 1]) {
             chapSel.value = currentChap + 1;
-        } 
-        // 2. 跳到下一卷書的第一章
-        else {
+        } else {
             const bookIdx = bookOrder.indexOf(currentBook);
             if (bookIdx < bookOrder.length - 1) {
                 const nextBook = bookOrder[bookIdx + 1];
                 bookSel.value = nextBook;
-                updateChapters(); // 更新該書卷的章列表
-                chapSel.value = 1; // 設為第1章
+                updateChapters();
+                chapSel.value = 1;
             } else {
-                alert("已經是最後一章了（啟示錄）");
+                alert("已經是最後一章了");
                 return;
             }
         }
-        // 重置為整章閱讀並刷新
-        updateStartVerses(); 
-        displayScripture();
+        updateStartVerses(); displayScripture();
     }
 
     function prevChapter() {
         const currentBook = bookSel.value;
         const currentChap = parseInt(chapSel.value);
-        
-        // 1. 同一卷書還有上一章
         if (currentChap > 1) {
             chapSel.value = currentChap - 1;
-        } 
-        // 2. 跳到上一卷書的最後一章
-        else {
+        } else {
             const bookIdx = bookOrder.indexOf(currentBook);
             if (bookIdx > 0) {
                 const prevBook = bookOrder[bookIdx - 1];
                 bookSel.value = prevBook;
-                updateChapters(); // 更新該書卷的章列表
-                // 找出該書卷最後一章
+                updateChapters();
                 const chaps = Object.keys(bibleData[prevBook]).map(Number);
-                const lastChap = Math.max(...chaps);
-                chapSel.value = lastChap;
+                chapSel.value = Math.max(...chaps);
             } else {
-                alert("已經是第一章了（創世記）");
+                alert("已經是第一章了");
                 return;
             }
         }
-        // 重置為整章閱讀並刷新
-        updateStartVerses();
-        displayScripture();
+        updateStartVerses(); displayScripture();
     }
 
     function displayScripture() {
@@ -454,7 +437,6 @@
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         if(!prompt) { alert("請先閱讀經文"); return; }
-
         const section = document.getElementById('geminiSection');
         const loading = document.getElementById('aiLoading');
         const result = document.getElementById('geminiResult');
@@ -493,7 +475,6 @@
         return html;
     }
 
-    // --- Grok 功能 ---
     function openGrok() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) { alert("請先選擇經文"); return; }
@@ -503,7 +484,6 @@
         });
     }
 
-    // --- 複製功能 ---
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) return;
@@ -530,10 +510,8 @@
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        try {
-            if (document.execCommand('copy')) callback();
-            else alert("複製失敗");
-        } catch (err) { alert("瀏覽器不支援"); }
+        try { if (document.execCommand('copy')) callback(); else alert("複製失敗"); } 
+        catch (err) { alert("瀏覽器不支援"); }
         document.body.removeChild(textArea);
     }
 </script>
