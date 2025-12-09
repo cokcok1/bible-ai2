@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V12)</title>
+    <title>聖經研讀 (V17)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -11,7 +11,6 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="聖經研讀">
 
     <style>
         :root {
@@ -23,7 +22,11 @@
             --bg: #f8f9fa;
             --card: #ffffff;
             --text: #333;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.9);
+            --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg);
@@ -43,7 +46,7 @@
         .progress-bar { width: 100%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden; margin-top: 10px; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
 
-        /* 控制面板 */
+        /* 控制面板 (V12 風格) */
         .controls {
             background: var(--card); padding: 20px; border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -56,7 +59,7 @@
         .full-width { grid-column: 1 / -1; }
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
-        /* 修正點：移除了 -webkit-appearance: none; 讓樣式回歸 V11 */
+        /* 輸入控件 */
         select {
             padding: 12px; border: 1px solid #ddd; border-radius: 8px;
             font-size: 16px; width: 100%; background: #fff;
@@ -67,40 +70,50 @@
             grid-column: 1 / -1;
             display: flex; gap: 10px; margin-top: 5px;
         }
+        /* 統一按鈕高度 */
+        .read-btn, .nav-btn, .ai-btn, .grok-btn, .copy-btn {
+            height: 52px; box-sizing: border-box;
+            display: flex; align-items: center; justify-content: center;
+        }
+
         .read-btn {
             flex-grow: 2; background-color: var(--primary); color: white; border: none;
-            padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
+        .read-btn:hover { background-color: #34495e; }
+
         .nav-btn {
             flex-grow: 0; min-width: 60px;
             background-color: var(--nav-btn-color); color: white; border: none;
-            padding: 12px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
+            border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .read-btn:hover { background-color: #34495e; }
         .nav-btn:hover { background-color: #7f8c8d; }
 
         /* 經文卡片 */
         .scripture-card {
             background: var(--card); padding: 25px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
-            display: none; border-left: 5px solid var(--accent);
+            display: none; 
+            border-left: 5px solid var(--accent); /* 紫色邊框在左邊 */
             position: relative;
         }
 
         /* 下方功能按鈕區 */
         .action-area { 
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
+            align-items: stretch;
         }
         
         .ai-btn, .copy-btn, .grok-btn {
-            font-size: 0.9rem; padding: 12px;
+            font-size: 0.85rem; padding: 5px;
             margin-top: 0; color: white; border: none; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
+            cursor: pointer; text-align: center; line-height: 1.2;
+            white-space: normal; /* 允許換行 */
         }
 
-        .ai-btn { background-color: #f39c12; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3); }
-        .grok-btn { background-color: var(--grok-color); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
-        .copy-btn { background-color: var(--accent); }
+        .ai-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); } /* 深橙色 */
+        .grok-btn { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); } /* 深黑色 */
+        .copy-btn { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); } /* 深紫色 */
 
         .ref-title {
             font-size: 1.3rem; font-weight: bold; color: var(--accent);
@@ -110,11 +123,12 @@
             font-size: 1.15rem; line-height: 1.9; white-space: pre-wrap; color: #2c3e50;
             margin-bottom: 30px;
         }
+        .verse-num { color: #999; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
 
         /* Gemini 區塊 */
         .gemini-section {
             display: none;
-            background: linear-gradient(to bottom right, #ffffff, #fdfbf7);
+            background: #fff;
             padding: 25px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             border: 1px solid #eee; margin-top: 20px;
@@ -181,8 +195,8 @@
     <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
-            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini 解經(VPN/非香港用戶)</button>
-            <button class="grok-btn" onclick="openGrok()">🚀 複製並前往 Grok</button>
+            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini解經<br>(VPN/非香港用戶)</button>
+            <button class="grok-btn" onclick="openGrok()">🚀 複製並前往Grok</button>
             <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
@@ -206,8 +220,7 @@
 <textarea id="hiddenPrompt" style="display:none;"></textarea>
 
 <script>
-    // --- API 設定 ---
-     
+    // ★★★ 你的 Cloudflare Worker 網址 (已預先填入) ★★★
     const GEMINI_API_URL = 'https://little-thunder-4b7b.imsklam1.workers.dev';
 
     const BIBLE_URL = 'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt';
@@ -215,7 +228,7 @@
     let bookOrder = [];
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V12-fix)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V17-Fix)`;
 
     window.onload = async function() {
         try {
@@ -383,14 +396,12 @@
         const startVer = startVerSel.value;
         let displayText = "";
         let refText = "";
-        let promptText = "";
-
+        
         if (startVer === "all") {
             refText = `${book} 第 ${chap} 章`;
             const verses = bibleData[book][chap];
             Object.keys(verses).map(Number).sort((a,b)=>a-b).forEach(v => {
-                displayText += `<span style='color:#999;font-size:0.8em;'>[${v}]</span> ${verses[v]}\n`;
-                promptText += `${v}. ${verses[v]}\n`;
+                displayText += `<span class='verse-num'>[${v}]</span>${verses[v]}\n`;
             });
         } else {
             const startNum = parseInt(startVer);
@@ -402,8 +413,7 @@
             }
             for (let i = startNum; i <= endNum; i++) {
                 if (bibleData[book][chap][i]) {
-                    displayText += `<span style='color:#999;font-size:0.8em;'>[${i}]</span> ${bibleData[book][chap][i]}\n`;
-                    promptText += `${i}. ${bibleData[book][chap][i]}\n`;
+                    displayText += `<span class='verse-num'>[${i}]</span>${bibleData[book][chap][i]}\n`;
                 }
             }
         }
@@ -413,14 +423,12 @@
         document.getElementById('displayText').innerHTML = displayText;
         document.getElementById('actionArea').style.display = 'grid';
 
-        generateHiddenPrompt(refText, promptText);
+        // 生成指令（不含經文）
+        generateHiddenPrompt(refText, "");
     }
 
     function generateHiddenPrompt(ref, text) {
-        const prompt = `請用中文（繁體）並以正統基督教信仰和聖經真理為基礎，解釋聖經【${ref}】。
-
-經文內容：
-"${text.replace(/\n/g, ' ')}"
+        const prompt = `請用中文（繁體）並以基督教信仰和聖經真理為基礎，解釋聖經【${ref}】。
 
 請提供：
 - 【經文概要】概述此章內容與主要事件。
@@ -433,10 +441,11 @@
         document.getElementById('hiddenPrompt').value = prompt;
     }
 
-    // --- Gemini API ---
+    // --- Gemini API (已加入錯誤偵測) ---
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         if(!prompt) { alert("請先閱讀經文"); return; }
+        
         const section = document.getElementById('geminiSection');
         const loading = document.getElementById('aiLoading');
         const result = document.getElementById('geminiResult');
@@ -453,12 +462,30 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+            // 檢查 HTTP 狀態
+            if (!response.ok) {
+                throw new Error(`Cloudflare 連線錯誤: ${response.status}`);
+            }
+
             const data = await response.json();
+
+            // 檢查 API 回傳錯誤
+            if (data.error) {
+                throw new Error(data.error.message || "Google API 未知錯誤");
+            }
+            
+            // 檢查 candidates 是否存在
+            if (!data.candidates || !data.candidates[0]) {
+                throw new Error("API 回傳結構異常 (請檢查 API Key 或模型是否可用)");
+            }
+
             const rawMarkdown = data.candidates[0].content.parts[0].text;
             result.innerHTML = parseMarkdown(rawMarkdown);
+
         } catch (error) {
-            result.innerHTML = `<span style="color:red;">錯誤：無法連接 Gemini API (${error.message})</span>`;
+            result.innerHTML = `<span style="color:red; font-weight:bold;">錯誤：${error.message}</span>`;
+            console.error(error);
         } finally {
             loading.style.display = 'none';
         }
@@ -475,7 +502,6 @@
         return html;
     }
 
-    // --- Grok 功能 ---
     function openGrok() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) { alert("請先選擇經文"); return; }
@@ -485,7 +511,6 @@
         });
     }
 
-    // --- 複製功能 (iPhone 優化版) ---
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         if (!txt) return;
@@ -494,9 +519,8 @@
             const originalText = "📋 僅複製指令";
             btn.innerText = "✅ 成功";
             btn.style.backgroundColor = "#27ae60";
-            setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 2000);
+            setTimeout(() => { btn.innerText = originalText; btn.style.backgroundColor = ""; }, 2000); // 顏色會在 CSS class 恢復時變回原樣
         };
-        // 優先嘗試現代 API
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(txt).then(onSuccess).catch(() => fallbackCopy(txt, onSuccess));
         } else {
@@ -507,15 +531,10 @@
     function fallbackCopy(text, callback) {
         const textArea = document.createElement("textarea");
         textArea.value = text;
-        
-        // 針對 iOS 調整樣式，避免無法選取
         textArea.style.position = "absolute";
         textArea.style.left = "-9999px";
-        textArea.setAttribute("readonly", ""); // 防止鍵盤彈出
-        
+        textArea.setAttribute("readonly", "");
         document.body.appendChild(textArea);
-        
-        // iOS 必須使用 range 來選取
         if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
             const range = document.createRange();
             range.selectNodeContents(textArea);
@@ -526,13 +545,8 @@
         } else {
             textArea.select();
         }
-        
-        try { 
-            if (document.execCommand('copy')) callback(); 
-            else alert("複製失敗，請手動長按選擇"); 
-        } 
+        try { if (document.execCommand('copy')) callback(); else alert("複製失敗，請手動長按選擇"); } 
         catch (err) { alert("瀏覽器不支援複製"); }
-        
         document.body.removeChild(textArea);
     }
 </script>
