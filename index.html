@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V18)</title>
+    <title>聖經研讀 (V21)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
     <link rel="icon" type="image/png" href="bible-icon.png">
-
-    <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="manifest" href="manifest.json">
 
     <style>
         :root {
             --primary: #2c3e50;
             --accent: #8e44ad;
-            --gemini-color: #d96570;
-            --grok-color: #000000;
-            --nav-btn-color: #95a5a6;
-            --bg: #f8f9fa;
-            --card: #ffffff;
+            --bg: #f0f2f5; 
             --text: #333;
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.9);
             --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --scripture-size: 1.25rem;
+            
+            /* V21: 補回遺失的按鈕顏色變數 */
+            --nav-btn-color: #95a5a6; 
         }
 
         body {
@@ -40,37 +40,70 @@
         }
         .container { max-width: 800px; margin: 0 auto; }
         
-        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 10px; }
-        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px; }
 
         /* 載入狀態 */
-        .loading-container { text-align: center; margin: 20px 0; }
+        .loading-container { text-align: center; margin: 10px 0 20px 0; }
         .progress-bar { width: 100%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden; margin-top: 10px; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
 
-        /* 控制面板 (V12 風格) */
-        .controls {
-            background: var(--card); padding: 20px; border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        /* 通用卡片 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+            padding: 20px;
             margin-bottom: 20px;
+        }
+
+        /* 工具列 */
+        .tools-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        .search-input {
+            flex-grow: 1;
+            padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
+            background: #fff;
+        }
+        .tool-btn {
+            min-width: 44px; height: 44px;
+            border: 1px solid #ccc; border-radius: 8px; background: #fff;
+            color: var(--primary); font-weight: bold; font-size: 1.1rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn:active { background: #eee; }
+        .search-btn { background: var(--primary); color: white; border: none; }
+
+        /* 搜尋結果區 */
+        .search-results {
+            max-height: 300px; overflow-y: auto; display: none;
+            background: #fff; border: 1px solid #eee; border-radius: 8px;
+            margin-bottom: 15px; padding: 10px;
+        }
+        .result-item { padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .result-item:hover { background: #f9f9f9; }
+        .result-ref { font-weight: bold; color: var(--accent); display: block; margin-bottom: 4px; }
+        .result-text { font-size: 0.9rem; color: #555; line-height: 1.5; }
+
+        /* 控制面板網格 */
+        .controls-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
             opacity: 0.5; pointer-events: none; transition: opacity 0.3s;
         }
-        .controls.active { opacity: 1; pointer-events: all; }
+        .controls-grid.active { opacity: 1; pointer-events: all; }
         
         .full-width { grid-column: 1 / -1; }
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
         select {
-            padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            padding: 12px; border: 1px solid #ccc; border-radius: 8px;
             font-size: 16px; width: 100%; background: #fff;
         }
 
-        /* 導航按鈕組 */
-        .nav-row {
-            grid-column: 1 / -1;
-            display: flex; gap: 10px; margin-top: 5px;
-        }
+        .nav-row { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 5px; }
+        
         /* 統一按鈕高度 */
         .read-btn, .nav-btn, .ai-btn, .grok-btn, .copy-btn {
             height: 52px; box-sizing: border-box;
@@ -83,9 +116,11 @@
         }
         .read-btn:hover { background-color: #34495e; }
 
+        /* 導航按鈕 (左右箭頭) */
         .nav-btn {
             flex-grow: 0; min-width: 60px;
-            background-color: var(--nav-btn-color); color: white; border: none;
+            background-color: var(--nav-btn-color); /* V21 修復：現在有顏色了 */
+            color: white; border: none;
             border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
         .nav-btn:hover { background-color: #7f8c8d; }
@@ -95,11 +130,10 @@
             background: var(--card); padding: 25px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
             display: none; 
-            border-left: 5px solid var(--accent); /* 紫色邊框在左邊 */
+            border-left: 5px solid var(--accent);
             position: relative;
         }
 
-        /* 下方功能按鈕區 */
         .action-area { 
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
             align-items: stretch;
@@ -109,58 +143,47 @@
             font-size: 0.85rem; padding: 5px;
             margin-top: 0; color: white; border: none; border-radius: 8px;
             cursor: pointer; text-align: center; line-height: 1.2;
-            white-space: normal; /* 允許換行 */
+            white-space: normal;
         }
 
-        .ai-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); } /* 深橙色 */
-        .grok-btn { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); } /* 深黑色 */
-        .copy-btn { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); } /* 深紫色 */
+        .ai-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+        .grok-btn { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); }
+        .copy-btn { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
 
         .ref-title {
             font-size: 1.3rem; font-weight: bold; color: var(--accent);
             margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;
         }
         .scripture-text {
-            font-size: 1.15rem; line-height: 1.9; white-space: pre-wrap; color: #2c3e50;
-            margin-bottom: 30px;
+            font-size: var(--scripture-size); 
+            line-height: 1.8; white-space: pre-wrap; color: #000;
+            margin-bottom: 30px; transition: font-size 0.2s;
         }
         .verse-num { color: #999; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
 
-        /* Gemini 區塊 - 優化空白 */
+        /* Gemini 區塊 */
         .gemini-section {
-            display: none;
-            background: #fff;
-            padding: 25px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border: 1px solid #eee; margin-top: 20px;
+            display: none; background: #fff; padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #eee; margin-top: 20px;
         }
         .gemini-header {
             display: flex; align-items: center; gap: 10px;
             font-size: 1.2rem; font-weight: bold; color: #333;
-            margin-bottom: 10px; /* 減少標題下方的空白 */
-            border-bottom: 2px solid #f39c12; padding-bottom: 10px;
+            margin-bottom: 10px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;
         }
-        /* 調整內容排版，減少段落間距 */
         .gemini-content { font-size: 1.05rem; line-height: 1.7; color: #444; }
-        
-        /* 針對標題的 Margin 調整 */
         .gemini-content h1, .gemini-content h2, .gemini-content h3 { 
-            color: #2c3e50; 
-            margin-top: 15px; /* 減少上方空白 */
-            margin-bottom: 8px; /* 減少下方空白 */
-            font-size: 1.1em; 
+            color: #2c3e50; margin-top: 15px; margin-bottom: 8px; font-size: 1.1em; 
         }
-        .gemini-content p { margin-bottom: 10px; } /* 段落間距 */
+        .gemini-content p { margin-bottom: 10px; }
         .gemini-content strong { color: #c0392b; }
         .gemini-content ul { padding-left: 20px; margin-bottom: 10px; }
-        .gemini-content li { margin-bottom: 5px; }
 
         .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #666; display: none; }
         .ai-spinner {
             display: inline-block; width: 20px; height: 20px;
             border: 3px solid #f3f3f3; border-top: 3px solid #f39c12;
-            border-radius: 50%; animation: spin 1s linear infinite;
-            margin-right: 10px; vertical-align: middle;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -170,7 +193,7 @@
         }
 
         @media (max-width: 600px) { 
-            .controls { grid-template-columns: 1fr; } 
+            .controls-grid { grid-template-columns: 1fr; } 
             .action-area { grid-template-columns: 1fr; }
         }
     </style>
@@ -178,28 +201,39 @@
 <body>
 
 <div class="container">
-    <h1>📖 聖經研讀</h1>
-    <div class="subtitle">資料來源：和合本繁體</div>
+    <div class="glass-card main-control-card">
+        <h1>📖 聖經研讀</h1>
+        <div class="subtitle">資料來源：和合本繁體 (Github/cokcok1)</div>
 
-    <div id="loadingArea" class="loading-container">
-        <div id="loadingText">正在下載資料庫 (4.5MB)...</div>
-        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-    </div>
-
-    <div id="controlPanel" class="controls">
-        <select id="bookSelect" class="full-width" onchange="updateChapters()"><option>載入中...</option></select>
-        <select id="chapterSelect" class="full-width" onchange="updateStartVerses()"><option>-</option></select>
-        
-        <div class="verse-group">
-            <select id="startVerseSelect" onchange="updateEndVerses()"><option>-</option></select>
-            <span id="toLabel" style="display:none;">至</span>
-            <select id="endVerseSelect" style="display:none;"><option>-</option></select>
+        <div id="loadingArea" class="loading-container">
+            <div id="loadingText">正在下載資料庫 (4.5MB)...</div>
+            <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
         </div>
 
-        <div class="nav-row">
-            <button class="nav-btn" onclick="prevChapter()" title="上一章">❮</button>
-            <button class="read-btn" onclick="displayScripture()">閱讀經文</button>
-            <button class="nav-btn" onclick="nextChapter()" title="下一章">❯</button>
+        <div class="tools-row" id="toolsRow" style="display:none;">
+            <input type="text" id="searchInput" class="search-input" placeholder="輸入關鍵字 (如: 愛人如己)">
+            <button class="tool-btn search-btn" onclick="searchBible()">🔍</button>
+            <button class="tool-btn" onclick="adjustFont(-1)">A-</button>
+            <button class="tool-btn" onclick="adjustFont(1)">A+</button>
+        </div>
+
+        <div id="searchResults" class="search-results"></div>
+
+        <div id="controlGrid" class="controls-grid">
+            <select id="bookSelect" class="full-width" onchange="updateChapters()"><option>載入中...</option></select>
+            <select id="chapterSelect" class="full-width" onchange="updateStartVerses()"><option>-</option></select>
+            
+            <div class="verse-group">
+                <select id="startVerseSelect" class="full-width" onchange="updateEndVerses()"><option>-</option></select>
+                <span id="toLabel" style="display:none;">至</span>
+                <select id="endVerseSelect" class="full-width" style="display:none;"><option>-</option></select>
+            </div>
+
+            <div class="nav-row">
+                <button class="nav-btn" onclick="prevChapter()" title="上一章">❮</button>
+                <button class="read-btn" onclick="displayScripture()">閱讀經文</button>
+                <button class="nav-btn" onclick="nextChapter()" title="下一章">❯</button>
+            </div>
         </div>
     </div>
 
@@ -216,7 +250,7 @@
 
         <div id="geminiSection" class="gemini-section">
             <div class="gemini-header">
-                <span>🤖 Gemini 解讀</span>
+                <span>🤖 Gemini 2.0 Flash 解讀</span>
             </div>
             <div id="aiLoading" class="ai-loading">
                 <div class="ai-spinner"></div> 正在連線 Google Gemini 思考神學意涵...
@@ -224,19 +258,22 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-09 (V18)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V21)</div>
     </div>
 </div>
 
 <textarea id="hiddenPrompt" style="display:none;"></textarea>
 
 <script>
-    // ★★★ 你的 Cloudflare Worker 網址 ★★★
     const GEMINI_API_URL = 'https://little-thunder-4b7b.imsklam1.workers.dev';
-
     const BIBLE_URL = 'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt';
+    
     let bibleData = {};
     let bookOrder = [];
+    let currentFontSize = 1.25;
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V21)`;
 
     window.onload = async function() {
         try {
@@ -257,7 +294,8 @@
             let text = new TextDecoder("utf-8").decode(concatUint8Arrays(chunks));
             parseBibleText(text);
             document.getElementById('loadingArea').style.display = 'none';
-            document.getElementById('controlPanel').className += ' active';
+            document.getElementById('controlGrid').className += ' active';
+            document.getElementById('toolsRow').style.display = 'flex';
             initSelectors();
         } catch (e) {
             document.getElementById('loadingText').innerText = "錯誤：" + e.message;
@@ -291,6 +329,87 @@
         });
     }
 
+    function adjustFont(delta) {
+        currentFontSize += delta * 0.1;
+        if (currentFontSize < 0.8) currentFontSize = 0.8;
+        if (currentFontSize > 3.0) currentFontSize = 3.0;
+        document.documentElement.style.setProperty('--scripture-size', `${currentFontSize}rem`);
+    }
+
+    // --- V20 智能搜尋邏輯 ---
+    function searchBible() {
+        const rawKeyword = document.getElementById('searchInput').value.trim();
+        const resultsDiv = document.getElementById('searchResults');
+        
+        if (!rawKeyword) { alert("請輸入搜尋關鍵字"); return; }
+        const cleanKeyword = rawKeyword.replace(/\s+/g, '');
+        if (cleanKeyword.length < 1) return;
+
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '<div style="padding:10px; color:#666;">🔍 正在搜尋全本聖經...</div>';
+
+        setTimeout(() => {
+            let results = [];
+            let count = 0;
+            const maxResults = 100;
+
+            for (let book of bookOrder) {
+                for (let chap in bibleData[book]) {
+                    for (let ver in bibleData[book][chap]) {
+                        const originalText = bibleData[book][chap][ver];
+                        const cleanText = originalText.replace(/\s+/g, '');
+                        
+                        if (cleanText.includes(cleanKeyword)) {
+                            results.push({ book, chap, ver, text: originalText });
+                            count++;
+                            if (count >= maxResults) break;
+                        }
+                    }
+                    if (count >= maxResults) break;
+                }
+                if (count >= maxResults) break;
+            }
+
+            if (results.length === 0) {
+                resultsDiv.innerHTML = `<div style="padding:10px; color:#c0392b;">找不到關於「${rawKeyword}」的經文。</div>`;
+            } else {
+                let html = `<div style="padding:10px; border-bottom:1px solid #eee; color:#2c3e50;">
+                    找到 ${results.length}${count >= maxResults ? '+' : ''} 處經文 (點擊跳轉):
+                    <button style="float:right; border:none; background:none; color:#999; cursor:pointer;" onclick="closeSearch()">✕ 關閉</button>
+                </div>`;
+                
+                const escapedKeyword = cleanKeyword.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
+                const highlightRegex = new RegExp(`(${escapedKeyword})`, 'g');
+
+                results.forEach(res => {
+                    const highlighted = res.text.replace(highlightRegex, `<span style="background:#f1c40f55; font-weight:bold;">$1</span>`);
+                    html += `<div class="result-item" onclick="jumpToScripture('${res.book}', ${res.chap}, ${res.ver})">
+                        <span class="result-ref">${res.book} ${res.chap}:${res.ver}</span>
+                        <div class="result-text">${highlighted}</div>
+                    </div>`;
+                });
+                resultsDiv.innerHTML = html;
+            }
+        }, 50);
+    }
+
+    function closeSearch() {
+        document.getElementById('searchResults').style.display = 'none';
+    }
+
+    function jumpToScripture(book, chap, ver) {
+        bookSel.value = book;
+        updateChapters();
+        chapSel.value = chap;
+        updateStartVerses();
+        startVerSel.value = ver;
+        updateEndVerses();
+        displayScripture();
+        closeSearch();
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- 原有邏輯 ---
     const bookSel = document.getElementById('bookSelect');
     const chapSel = document.getElementById('chapterSelect');
     const startVerSel = document.getElementById('startVerseSelect');
@@ -448,11 +567,9 @@
         document.getElementById('hiddenPrompt').value = prompt;
     }
 
-    // --- Gemini API (V18 Fix: 錯誤偵測 + 內容解析) ---
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         if(!prompt) { alert("請先閱讀經文"); return; }
-        
         const section = document.getElementById('geminiSection');
         const loading = document.getElementById('aiLoading');
         const result = document.getElementById('geminiResult');
@@ -470,23 +587,13 @@
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                throw new Error(`Cloudflare 連線錯誤: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`Cloudflare 連線錯誤: ${response.status}`);
             const data = await response.json();
-
-            if (data.error) {
-                throw new Error(data.error.message || "Google API 未知錯誤");
-            }
-            
-            if (!data.candidates || !data.candidates[0]) {
-                throw new Error("API 回傳結構異常 (請檢查 API Key 或模型)");
-            }
+            if (data.error) throw new Error(data.error.message || "Google API 未知錯誤");
+            if (!data.candidates || !data.candidates[0]) throw new Error("API 回傳結構異常");
 
             const rawMarkdown = data.candidates[0].content.parts[0].text;
             result.innerHTML = parseMarkdown(rawMarkdown);
-
         } catch (error) {
             result.innerHTML = `<span style="color:red; font-weight:bold;">錯誤：${error.message}</span>`;
             console.error(error);
@@ -495,28 +602,16 @@
         }
     }
 
-    // V18 Fix: 優化版 Markdown 解析，消除過多空白
     function parseMarkdown(text) {
-        // 1. 處理標題 (### -> h3)
-        let html = text.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+        let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-        
-        // 2. 處理粗體
-        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        // 3. 處理列表
         html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
         html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-        
-        // 4. 關鍵修正：消除多餘換行
-        // 先將連續的 3 個以上換行縮減為 2 個
         html = html.replace(/\n{3,}/g, '\n\n');
-        // 標題後的換行直接移除 (因為標題已有 margin)
         html = html.replace(/(<\/h[1-3]>)\n+/g, '$1');
-        // 剩下的換行轉為 <br>
         html = html.replace(/\n/g, '<br>');
-        
         return html;
     }
 
