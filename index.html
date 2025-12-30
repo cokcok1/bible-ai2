@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V21)</title>
+    <title>聖經研讀 (V23)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -24,8 +24,6 @@
             --glass-border: 1px solid rgba(255, 255, 255, 0.9);
             --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             --scripture-size: 1.25rem;
-            
-            /* V21: 補回遺失的按鈕顏色變數 */
             --nav-btn-color: #95a5a6; 
         }
 
@@ -105,7 +103,7 @@
         .nav-row { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 5px; }
         
         /* 統一按鈕高度 */
-        .read-btn, .nav-btn, .ai-btn, .grok-btn, .copy-btn {
+        .read-btn, .nav-btn, .ai-btn, .grok-btn, .copy-btn, .context-btn {
             height: 52px; box-sizing: border-box;
             display: flex; align-items: center; justify-content: center;
         }
@@ -116,11 +114,9 @@
         }
         .read-btn:hover { background-color: #34495e; }
 
-        /* 導航按鈕 (左右箭頭) */
         .nav-btn {
             flex-grow: 0; min-width: 60px;
-            background-color: var(--nav-btn-color); /* V21 修復：現在有顏色了 */
-            color: white; border: none;
+            background-color: var(--nav-btn-color); color: white; border: none;
             border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
         .nav-btn:hover { background-color: #7f8c8d; }
@@ -134,17 +130,20 @@
             position: relative;
         }
 
+        /* V23: 功能按鈕區 (移回上方) */
         .action-area { 
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
             align-items: stretch;
         }
         
-        .ai-btn, .copy-btn, .grok-btn {
-            font-size: 0.85rem; padding: 5px;
-            margin-top: 0; color: white; border: none; border-radius: 8px;
-            cursor: pointer; text-align: center; line-height: 1.2;
-            white-space: normal;
+        .glass-btn {
+            width: 100%; padding: 8px; border-radius: 10px; border: none;
+            color: white; font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: normal; line-height: 1.2; text-align: center;
         }
+        .glass-btn:active { transform: translateY(2px); }
 
         .ai-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
         .grok-btn { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); }
@@ -157,9 +156,19 @@
         .scripture-text {
             font-size: var(--scripture-size); 
             line-height: 1.8; white-space: pre-wrap; color: #000;
-            margin-bottom: 30px; transition: font-size 0.2s;
+            margin-bottom: 20px; transition: font-size 0.2s;
         }
         .verse-num { color: #999; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
+
+        /* 閱讀整章按鈕 */
+        .context-btn {
+            width: 100%; margin-top: 10px; margin-bottom: 20px; border-radius: 10px; border: none;
+            color: white; font-weight: bold; font-size: 1rem; cursor: pointer;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+            display: none;
+        }
+        .context-btn:active { transform: translateY(2px); }
 
         /* Gemini 區塊 */
         .gemini-section {
@@ -240,13 +249,15 @@
     <div id="resultCard" class="scripture-card">
         
         <div id="actionArea" class="action-area">
-            <button class="ai-btn" onclick="callGeminiAPI()">✨ Gemini解經<br>(VPN/非香港用戶)</button>
-            <button class="grok-btn" onclick="openGrok()">🚀 複製並前往Grok</button>
-            <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
+            <button class="glass-btn ai-btn" onclick="callGeminiAPI()">✨ Gemini解經<br>(VPN/非香港用戶)</button>
+            <button class="glass-btn grok-btn" onclick="openGrok()">🚀 複製並前往Grok</button>
+            <button class="glass-btn copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
         <div class="ref-title" id="displayRef"></div>
         <div class="scripture-text" id="displayText"></div>
+
+        <button id="contextBtn" class="context-btn" onclick="switchToWholeChapter()">📖 閱讀整章 (顯示上下文)</button>
 
         <div id="geminiSection" class="gemini-section">
             <div class="gemini-header">
@@ -258,7 +269,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V21)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V23)</div>
     </div>
 </div>
 
@@ -273,7 +284,7 @@
     let currentFontSize = 1.25;
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V21)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V23)`;
 
     window.onload = async function() {
         try {
@@ -336,7 +347,6 @@
         document.documentElement.style.setProperty('--scripture-size', `${currentFontSize}rem`);
     }
 
-    // --- V20 智能搜尋邏輯 ---
     function searchBible() {
         const rawKeyword = document.getElementById('searchInput').value.trim();
         const resultsDiv = document.getElementById('searchResults');
@@ -404,9 +414,18 @@
         updateStartVerses();
         startVerSel.value = ver;
         updateEndVerses();
+        
+        document.getElementById('searchInput').value = ''; // 清空搜尋
+        
         displayScripture();
         closeSearch();
         document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function switchToWholeChapter() {
+        startVerSel.value = 'all';
+        updateEndVerses();
+        displayScripture();
     }
 
     // --- 原有邏輯 ---
@@ -523,6 +542,7 @@
         const startVer = startVerSel.value;
         let displayText = "";
         let refText = "";
+        const contextBtn = document.getElementById('contextBtn');
         
         if (startVer === "all") {
             refText = `${book} 第 ${chap} 章`;
@@ -530,6 +550,7 @@
             Object.keys(verses).map(Number).sort((a,b)=>a-b).forEach(v => {
                 displayText += `<span class='verse-num'>[${v}]</span>${verses[v]}\n`;
             });
+            contextBtn.style.display = "none";
         } else {
             const startNum = parseInt(startVer);
             const endNum = parseInt(endVerSel.value);
@@ -543,6 +564,7 @@
                     displayText += `<span class='verse-num'>[${i}]</span>${bibleData[book][chap][i]}\n`;
                 }
             }
+            contextBtn.style.display = "block";
         }
 
         document.getElementById('resultCard').style.display = 'block';
