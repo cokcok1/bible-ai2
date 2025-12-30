@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V23)</title>
+    <title>聖經研讀 (V25)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -15,16 +15,51 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
+        /* 定義變數：預設為淺色模式 (Light Mode) */
         :root {
+            --bg: #f0f2f5; 
+            --text: #333333;
             --primary: #2c3e50;
             --accent: #8e44ad;
-            --bg: #f0f2f5; 
-            --text: #333;
+            
+            /* 玻璃卡片顏色 */
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.9);
             --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            
+            /* 輸入框與按鈕 */
+            --input-bg: #ffffff;
+            --input-border: #cccccc;
+            --input-text: #333333;
+            --nav-btn-bg: #ffffff;
+            --nav-btn-color: #95a5a6;
+            
+            /* 其他 */
             --scripture-size: 1.25rem;
-            --nav-btn-color: #95a5a6; 
+            --highlight-color: #f1c40f55;
+            --gemini-title-border: #f39c12;
+        }
+
+        /* 深色模式變數 (Dark Mode) */
+        [data-theme="dark"] {
+            --bg: #0f172a; /* 深空藍背景 */
+            --text: #e2e8f0; /* 柔和亮白字 */
+            --primary: #60a5fa; /* 淺藍色標題 */
+            --accent: #a78bfa; /* 淺紫色強調 */
+            
+            /* 深色玻璃質感 */
+            --glass-bg: rgba(30, 41, 59, 0.85); 
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            
+            /* 深色輸入框 */
+            --input-bg: #1e293b;
+            --input-border: #475569;
+            --input-text: #ffffff;
+            --nav-btn-bg: #1e293b;
+            --nav-btn-color: #94a3b8;
+            
+            --highlight-color: #d9770688; /* 深色背景的高亮色 */
         }
 
         body {
@@ -35,11 +70,12 @@
             color: var(--text);
             padding-bottom: 120px;
             -webkit-text-size-adjust: 100%;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .container { max-width: 800px; margin: 0 auto; }
         
         h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px; }
+        .subtitle { text-align: center; color: #888; font-size: 0.9rem; margin-bottom: 15px; }
 
         /* 載入狀態 */
         .loading-container { text-align: center; margin: 10px 0 20px 0; }
@@ -49,41 +85,44 @@
         /* 通用卡片 */
         .glass-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: var(--glass-border);
             box-shadow: var(--glass-shadow);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
 
         /* 工具列 */
         .tools-row { display: flex; gap: 8px; margin-bottom: 15px; }
         .search-input {
             flex-grow: 1;
-            padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
-            background: #fff;
+            padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 16px;
+            background: var(--input-bg); color: var(--input-text);
         }
         .tool-btn {
             min-width: 44px; height: 44px;
-            border: 1px solid #ccc; border-radius: 8px; background: #fff;
-            color: var(--primary); font-weight: bold; font-size: 1.1rem;
+            border: 1px solid var(--input-border); border-radius: 8px; 
+            background: var(--input-bg); color: var(--text);
+            font-weight: bold; font-size: 1.1rem;
             cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
         }
-        .tool-btn:active { background: #eee; }
+        .tool-btn:active { transform: scale(0.95); opacity: 0.8; }
         .search-btn { background: var(--primary); color: white; border: none; }
 
         /* 搜尋結果區 */
         .search-results {
             max-height: 300px; overflow-y: auto; display: none;
-            background: #fff; border: 1px solid #eee; border-radius: 8px;
-            margin-bottom: 15px; padding: 10px;
+            background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 8px;
+            margin-bottom: 15px; padding: 10px; color: var(--text);
         }
-        .result-item { padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-        .result-item:hover { background: #f9f9f9; }
+        .result-item { padding: 10px; border-bottom: 1px solid var(--glass-border); cursor: pointer; }
+        .result-item:hover { background: rgba(128, 128, 128, 0.1); }
         .result-ref { font-weight: bold; color: var(--accent); display: block; margin-bottom: 4px; }
-        .result-text { font-size: 0.9rem; color: #555; line-height: 1.5; }
+        .result-text { font-size: 0.9rem; opacity: 0.8; line-height: 1.5; }
 
         /* 控制面板網格 */
         .controls-grid {
@@ -96,8 +135,9 @@
         .verse-group { display: flex; align-items: center; gap: 5px; grid-column: 1 / -1; }
         
         select {
-            padding: 12px; border: 1px solid #ccc; border-radius: 8px;
-            font-size: 16px; width: 100%; background: #fff;
+            padding: 12px; border: 1px solid var(--input-border); border-radius: 8px;
+            font-size: 16px; width: 100%; 
+            background: var(--input-bg); color: var(--input-text);
         }
 
         .nav-row { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 5px; }
@@ -112,25 +152,25 @@
             flex-grow: 2; background-color: var(--primary); color: white; border: none;
             border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
         }
-        .read-btn:hover { background-color: #34495e; }
+        .read-btn:hover { opacity: 0.9; }
 
         .nav-btn {
             flex-grow: 0; min-width: 60px;
             background-color: var(--nav-btn-color); color: white; border: none;
             border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .nav-btn:hover { background-color: #7f8c8d; }
+        .nav-btn:hover { opacity: 0.8; }
 
         /* 經文卡片 */
         .scripture-card {
-            background: var(--card); padding: 25px; border-radius: 12px;
+            background: var(--glass-bg); padding: 25px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
             display: none; 
             border-left: 5px solid var(--accent);
             position: relative;
         }
 
-        /* V23: 功能按鈕區 (移回上方) */
+        /* 功能按鈕區 */
         .action-area { 
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; 
             align-items: stretch;
@@ -151,14 +191,14 @@
 
         .ref-title {
             font-size: 1.3rem; font-weight: bold; color: var(--accent);
-            margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;
+            margin-bottom: 15px; border-bottom: 2px solid rgba(128,128,128,0.2); padding-bottom: 10px;
         }
         .scripture-text {
             font-size: var(--scripture-size); 
-            line-height: 1.8; white-space: pre-wrap; color: #000;
+            line-height: 1.8; white-space: pre-wrap; color: var(--text);
             margin-bottom: 20px; transition: font-size 0.2s;
         }
-        .verse-num { color: #999; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
+        .verse-num { color: #888; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
 
         /* 閱讀整章按鈕 */
         .context-btn {
@@ -172,33 +212,38 @@
 
         /* Gemini 區塊 */
         .gemini-section {
-            display: none; background: #fff; padding: 25px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #eee; margin-top: 20px;
+            display: none; 
+            background: var(--glass-bg);
+            padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid var(--glass-border); 
+            margin-top: 20px; color: var(--text);
         }
         .gemini-header {
             display: flex; align-items: center; gap: 10px;
-            font-size: 1.2rem; font-weight: bold; color: #333;
-            margin-bottom: 10px; border-bottom: 2px solid #f39c12; padding-bottom: 10px;
+            font-size: 1.2rem; font-weight: bold; color: var(--text);
+            margin-bottom: 10px; border-bottom: 2px solid var(--gemini-title-border); padding-bottom: 10px;
         }
-        .gemini-content { font-size: 1.05rem; line-height: 1.7; color: #444; }
+        .gemini-content { font-size: 1.05rem; line-height: 1.7; color: var(--text); opacity: 0.9; }
         .gemini-content h1, .gemini-content h2, .gemini-content h3 { 
-            color: #2c3e50; margin-top: 15px; margin-bottom: 8px; font-size: 1.1em; 
+            color: var(--primary); margin-top: 15px; margin-bottom: 8px; font-size: 1.1em; 
         }
         .gemini-content p { margin-bottom: 10px; }
-        .gemini-content strong { color: #c0392b; }
+        .gemini-content strong { color: #e74c3c; } 
+        [data-theme="dark"] .gemini-content strong { color: #ff6b6b; }
+        
         .gemini-content ul { padding-left: 20px; margin-bottom: 10px; }
 
-        .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #666; display: none; }
+        .ai-loading { text-align: center; padding: 20px; font-style: italic; color: #888; display: none; }
         .ai-spinner {
             display: inline-block; width: 20px; height: 20px;
-            border: 3px solid #f3f3f3; border-top: 3px solid #f39c12;
+            border: 3px solid rgba(128,128,128,0.2); border-top: 3px solid var(--gemini-title-border);
             border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .footer-note {
-            text-align: right; font-size: 0.75rem; color: #aaa;
-            border-top: 1px solid #f0f0f0; padding-top: 10px; font-style: italic;
+            text-align: right; font-size: 0.75rem; color: #888;
+            border-top: 1px solid rgba(128,128,128,0.1); padding-top: 10px; font-style: italic;
         }
 
         @media (max-width: 600px) { 
@@ -212,7 +257,7 @@
 <div class="container">
     <div class="glass-card main-control-card">
         <h1>📖 聖經研讀</h1>
-        <div class="subtitle">資料來源：和合本繁體</div>
+        <div class="subtitle">資料來源：和合本繁體 (Github/cokcok1)</div>
 
         <div id="loadingArea" class="loading-container">
             <div id="loadingText">正在下載資料庫 (4.5MB)...</div>
@@ -224,6 +269,7 @@
             <button class="tool-btn search-btn" onclick="searchBible()">🔍</button>
             <button class="tool-btn" onclick="adjustFont(-1)">A-</button>
             <button class="tool-btn" onclick="adjustFont(1)">A+</button>
+            <button class="tool-btn" onclick="toggleTheme()" id="themeBtn" title="切換深色模式">🌙</button>
         </div>
 
         <div id="searchResults" class="search-results"></div>
@@ -257,7 +303,7 @@
         <div class="ref-title" id="displayRef"></div>
         <div class="scripture-text" id="displayText"></div>
 
-        <button id="contextBtn" class="context-btn" onclick="switchToWholeChapter()">📖 閱讀整章</button>
+        <button id="contextBtn" class="context-btn" onclick="switchToWholeChapter()">📖 閱讀整章 (顯示上下文)</button>
 
         <div id="geminiSection" class="gemini-section">
             <div class="gemini-header">
@@ -269,7 +315,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V23)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V25)</div>
     </div>
 </div>
 
@@ -284,10 +330,35 @@
     let currentFontSize = 1.25;
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V23)`;
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V25)`;
+
+    function toggleTheme() {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const themeBtn = document.getElementById('themeBtn');
+        
+        if (currentTheme === 'dark') {
+            html.removeAttribute('data-theme');
+            themeBtn.innerText = '🌙';
+            localStorage.setItem('theme', 'light');
+        } else {
+            html.setAttribute('data-theme', 'dark');
+            themeBtn.innerText = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        // 按鈕文字會由 onload 設定
+    }
 
     window.onload = async function() {
         try {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.getElementById('themeBtn').innerText = '☀️';
+            }
+
             const response = await fetch(BIBLE_URL);
             if (!response.ok) throw new Error("網絡下載失敗");
             const reader = response.body.getReader();
@@ -356,7 +427,7 @@
         if (cleanKeyword.length < 1) return;
 
         resultsDiv.style.display = 'block';
-        resultsDiv.innerHTML = '<div style="padding:10px; color:#666;">🔍 正在搜尋全本聖經...</div>';
+        resultsDiv.innerHTML = '<div style="padding:10px; color:#888;">🔍 正在搜尋全本聖經...</div>';
 
         setTimeout(() => {
             let results = [];
@@ -381,18 +452,18 @@
             }
 
             if (results.length === 0) {
-                resultsDiv.innerHTML = `<div style="padding:10px; color:#c0392b;">找不到關於「${rawKeyword}」的經文。</div>`;
+                resultsDiv.innerHTML = `<div style="padding:10px; color:var(--accent);">找不到關於「${rawKeyword}」的經文。</div>`;
             } else {
-                let html = `<div style="padding:10px; border-bottom:1px solid #eee; color:#2c3e50;">
+                let html = `<div style="padding:10px; border-bottom:1px solid var(--glass-border); color:var(--primary);">
                     找到 ${results.length}${count >= maxResults ? '+' : ''} 處經文 (點擊跳轉):
-                    <button style="float:right; border:none; background:none; color:#999; cursor:pointer;" onclick="closeSearch()">✕ 關閉</button>
+                    <button style="float:right; border:none; background:none; color:var(--text); opacity:0.6; cursor:pointer;" onclick="closeSearch()">✕ 關閉</button>
                 </div>`;
                 
                 const escapedKeyword = cleanKeyword.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
                 const highlightRegex = new RegExp(`(${escapedKeyword})`, 'g');
 
                 results.forEach(res => {
-                    const highlighted = res.text.replace(highlightRegex, `<span style="background:#f1c40f55; font-weight:bold;">$1</span>`);
+                    const highlighted = res.text.replace(highlightRegex, `<span style="background:var(--highlight-color); font-weight:bold;">$1</span>`);
                     html += `<div class="result-item" onclick="jumpToScripture('${res.book}', ${res.chap}, ${res.ver})">
                         <span class="result-ref">${res.book} ${res.chap}:${res.ver}</span>
                         <div class="result-text">${highlighted}</div>
@@ -415,7 +486,7 @@
         startVerSel.value = ver;
         updateEndVerses();
         
-        document.getElementById('searchInput').value = ''; // 清空搜尋
+        document.getElementById('searchInput').value = '';
         
         displayScripture();
         closeSearch();
