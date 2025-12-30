@@ -1,6 +1,6 @@
 {
-  "name": "聖經 AI 研讀",
-  "short_name": "聖經AI",
+  "name": "聖經研讀",
+  "short_name": "聖經研讀",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f8f9fa",
