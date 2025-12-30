@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 (V25)</title>
+    <title>聖經研讀 (V28)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -15,51 +15,26 @@
     <link rel="manifest" href="manifest.json">
 
     <style>
-        /* 定義變數：預設為淺色模式 (Light Mode) */
+        /* 變數定義 (簡潔版，移除深色模式變數) */
         :root {
             --bg: #f0f2f5; 
             --text: #333333;
             --primary: #2c3e50;
             --accent: #8e44ad;
             
-            /* 玻璃卡片顏色 */
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.9);
             --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             
-            /* 輸入框與按鈕 */
             --input-bg: #ffffff;
             --input-border: #cccccc;
             --input-text: #333333;
             --nav-btn-bg: #ffffff;
             --nav-btn-color: #95a5a6;
             
-            /* 其他 */
-            --scripture-size: 1.25rem;
+            --scripture-size: 1.25rem; /* 固定字體大小 */
             --highlight-color: #f1c40f55;
             --gemini-title-border: #f39c12;
-        }
-
-        /* 深色模式變數 (Dark Mode) */
-        [data-theme="dark"] {
-            --bg: #0f172a; /* 深空藍背景 */
-            --text: #e2e8f0; /* 柔和亮白字 */
-            --primary: #60a5fa; /* 淺藍色標題 */
-            --accent: #a78bfa; /* 淺紫色強調 */
-            
-            /* 深色玻璃質感 */
-            --glass-bg: rgba(30, 41, 59, 0.85); 
-            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-            --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            
-            /* 深色輸入框 */
-            --input-bg: #1e293b;
-            --input-border: #475569;
-            --input-text: #ffffff;
-            --nav-btn-bg: #1e293b;
-            --nav-btn-color: #94a3b8;
-            
-            --highlight-color: #d9770688; /* 深色背景的高亮色 */
         }
 
         body {
@@ -70,7 +45,6 @@
             color: var(--text);
             padding-bottom: 120px;
             -webkit-text-size-adjust: 100%;
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .container { max-width: 800px; margin: 0 auto; }
         
@@ -92,16 +66,23 @@
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
-            transition: all 0.3s ease;
         }
 
-        /* 工具列 */
-        .tools-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        /* 工具列 (簡潔版) */
+        .tools-row { 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
         .search-input {
-            flex-grow: 1;
+            flex-grow: 1; /* 佔滿剩餘空間 */
             padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 16px;
             background: var(--input-bg); color: var(--input-text);
+            box-sizing: border-box;
         }
+
         .tool-btn {
             min-width: 44px; height: 44px;
             border: 1px solid var(--input-border); border-radius: 8px; 
@@ -196,7 +177,7 @@
         .scripture-text {
             font-size: var(--scripture-size); 
             line-height: 1.8; white-space: pre-wrap; color: var(--text);
-            margin-bottom: 20px; transition: font-size 0.2s;
+            margin-bottom: 20px;
         }
         .verse-num { color: #888; font-weight: normal; font-size: 0.8em; margin-right: 4px; }
 
@@ -229,7 +210,6 @@
         }
         .gemini-content p { margin-bottom: 10px; }
         .gemini-content strong { color: #e74c3c; } 
-        [data-theme="dark"] .gemini-content strong { color: #ff6b6b; }
         
         .gemini-content ul { padding-left: 20px; margin-bottom: 10px; }
 
@@ -267,9 +247,6 @@
         <div class="tools-row" id="toolsRow" style="display:none;">
             <input type="text" id="searchInput" class="search-input" placeholder="輸入關鍵字 (如: 愛人如己)">
             <button class="tool-btn search-btn" onclick="searchBible()">🔍</button>
-            <button class="tool-btn" onclick="adjustFont(-1)">A-</button>
-            <button class="tool-btn" onclick="adjustFont(1)">A+</button>
-            <button class="tool-btn" onclick="toggleTheme()" id="themeBtn" title="切換深色模式">🌙</button>
         </div>
 
         <div id="searchResults" class="search-results"></div>
@@ -315,7 +292,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V25)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI解釋內容只供參考 2025-12-30 (V28)</div>
     </div>
 </div>
 
@@ -327,38 +304,12 @@
     
     let bibleData = {};
     let bookOrder = [];
-    let currentFontSize = 1.25;
 
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V25)`;
-
-    function toggleTheme() {
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        const themeBtn = document.getElementById('themeBtn');
-        
-        if (currentTheme === 'dark') {
-            html.removeAttribute('data-theme');
-            themeBtn.innerText = '🌙';
-            localStorage.setItem('theme', 'light');
-        } else {
-            html.setAttribute('data-theme', 'dark');
-            themeBtn.innerText = '☀️';
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    if (localStorage.getItem('theme') === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        // 按鈕文字會由 onload 設定
-    }
+    document.getElementById('footerVer').innerText = `Powered by Google Gemini AI解釋內容只供參考 ${today} (V28)`;
 
     window.onload = async function() {
         try {
-            if (localStorage.getItem('theme') === 'dark') {
-                document.getElementById('themeBtn').innerText = '☀️';
-            }
-
             const response = await fetch(BIBLE_URL);
             if (!response.ok) throw new Error("網絡下載失敗");
             const reader = response.body.getReader();
@@ -409,13 +360,6 @@
                 bibleData[book][chapter][verse] = content;
             }
         });
-    }
-
-    function adjustFont(delta) {
-        currentFontSize += delta * 0.1;
-        if (currentFontSize < 0.8) currentFontSize = 0.8;
-        if (currentFontSize > 3.0) currentFontSize = 3.0;
-        document.documentElement.style.setProperty('--scripture-size', `${currentFontSize}rem`);
     }
 
     function searchBible() {
