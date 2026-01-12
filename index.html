@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 / Bible Study (V31)</title>
+    <title>聖經研讀 / Bible Study (V32)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -34,6 +34,9 @@
             --scripture-size: 1.25rem;
             --highlight-color: #f1c40f55;
             --gemini-title-border: #f39c12;
+            
+            /* 新增熱線按鈕顏色 */
+            --hotline-green: #27ae60;
 
             --element-height: 52px; /* 統一高度 */
         }
@@ -75,7 +78,7 @@
 
         /* V30: 語言切換按鈕區 */
         .lang-switch-row {
-            display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;
+            display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;
         }
         .lang-btn {
             padding: 5px 15px;
@@ -86,10 +89,24 @@
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.2s;
+            display: flex; align-items: center;
         }
         .lang-btn.active {
             background: var(--primary);
             color: white;
+        }
+
+        /* V32: 上帝熱線按鈕樣式 */
+        .hotline-btn {
+            background-color: var(--hotline-green) !important;
+            color: white !important;
+            border-color: var(--hotline-green) !important;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);
+        }
+        .hotline-btn:active {
+            transform: translateY(2px);
+            opacity: 0.9;
         }
 
         /* 載入狀態 */
@@ -279,6 +296,7 @@
         <div class="lang-switch-row">
             <button class="lang-btn active" id="btnZH" onclick="switchLanguage('zh')">繁體中文</button>
             <button class="lang-btn" id="btnEN" onclick="switchLanguage('en')">English</button>
+            <button class="lang-btn hotline-btn" onclick="window.open('https://cokcok1.github.io/hotline/hotline.html', '_blank')">上帝熱線 📞</button>
         </div>
 
         <div class="subtitle" id="sourceLabel">資料來源：和合本繁體</div>
@@ -336,7 +354,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-01-11 (V31)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-01-11 (V32)</div>
     </div>
 </div>
 
@@ -421,7 +439,7 @@
     };
 
     // --- Initialization ---
-    // 日期已固定，變數僅保留兼容性
+    // 日期固定 V32
     const today = "2026-01-11";
     
     // Initial Load (Default Chinese)
@@ -467,8 +485,8 @@
         document.getElementById('copyBtn').innerText = t.copyBtn;
         document.getElementById('geminiHeader').innerText = t.geminiHeader;
         document.getElementById('loadingMsg').innerText = t.loadingMsg;
-        // 固定日期 2026-01-11
-        document.getElementById('footerVer').innerText = `${t.footer} 2026-01-11 (V31)`;
+        // V32
+        document.getElementById('footerVer').innerText = `${t.footer} 2026-01-11 (V32)`;
         document.getElementById('loadingText').innerText = t.loadingText;
         document.getElementById('toLabel').innerText = t.to;
     }
@@ -505,7 +523,7 @@
             
             initSelectors();
             
-            // ★★★ V31 新增：檢查網址參數並執行自動操作 ★★★
+            // ★★★ V31/V32 功能：檢查網址參數並執行自動操作 ★★★
             checkUrlParams();
             
         } catch (e) {
@@ -929,7 +947,7 @@ Please include the following:
         document.body.removeChild(textArea);
     }
 
-    // --- V31 新增功能：讀取 URL 參數並自動執行 ---
+    // --- V31/V32 功能：讀取 URL 參數並自動執行 ---
     function checkUrlParams() {
         const params = new URLSearchParams(window.location.search);
         const bookParam = params.get('book'); 
