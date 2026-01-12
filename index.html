@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 / Bible Study (V30)</title>
+    <title>聖經研讀 / Bible Study (V31)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -336,7 +336,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-01-03 (V30)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-01-11 (V31)</div>
     </div>
 </div>
 
@@ -421,7 +421,8 @@
     };
 
     // --- Initialization ---
-    const today = new Date().toISOString().split('T')[0];
+    // 日期已固定，變數僅保留兼容性
+    const today = "2026-01-11";
     
     // Initial Load (Default Chinese)
     window.onload = function() {
@@ -445,24 +446,9 @@
         const url = lang === 'zh' ? BIBLE_URL_ZH : BIBLE_URL_EN;
         
         // Reset UI State
-        // ... 上面是原本的代碼 ...
-        document.getElementById('loadingArea').style.display = 'none';
-        document.getElementById('controlGrid').className += ' active';
-        document.getElementById('toolsRow').style.display = 'flex';
-            
-        initSelectors();
-            
-        checkUrlParams(); // <--- 加上這一句！
-            
-        } catch (e) {
-            document.getElementById('loadingText').innerText = "Error: " + e.message;
-        }
-    }
-
-
-
-
-      
+        document.getElementById('loadingArea').style.display = 'block';
+        document.getElementById('controlGrid').className = 'controls-grid'; // remove active
+        document.getElementById('toolsRow').style.display = 'none';
         document.getElementById('resultCard').style.display = 'none';
         document.getElementById('searchResults').style.display = 'none';
         
@@ -481,7 +467,8 @@
         document.getElementById('copyBtn').innerText = t.copyBtn;
         document.getElementById('geminiHeader').innerText = t.geminiHeader;
         document.getElementById('loadingMsg').innerText = t.loadingMsg;
-        document.getElementById('footerVer').innerText = `${t.footer} ${today} (V30)`;
+        // 固定日期 2026-01-11
+        document.getElementById('footerVer').innerText = `${t.footer} 2026-01-11 (V31)`;
         document.getElementById('loadingText').innerText = t.loadingText;
         document.getElementById('toLabel').innerText = t.to;
     }
@@ -518,6 +505,9 @@
             
             initSelectors();
             
+            // ★★★ V31 新增：檢查網址參數並執行自動操作 ★★★
+            checkUrlParams();
+            
         } catch (e) {
             document.getElementById('loadingText').innerText = "Error: " + e.message;
         }
@@ -533,10 +523,7 @@
 
     function parseBibleText(rawText) {
         const lines = rawText.split('\n');
-        // Regex handles both "Gen 1:1 Text" (KJV) and "創世紀 1:1 文字" (CUV)
-        // Adjust regex to be flexible for book names containing spaces (e.g., 1 John)
         const lineRegex = /^(.+?)\s+(\d+):(\d+)\s+(.*)$/;
-        
         lines.forEach(line => {
             line = line.trim();
             if (!line) return;
@@ -546,20 +533,14 @@
                 const chapter = parseInt(match[2]);
                 const verse = parseInt(match[3]);
                 const content = match[4];
-                
-                if (!bibleData[book]) { 
-                    bibleData[book] = {}; 
-                    bookOrder.push(book); 
-                }
-                if (!bibleData[book][chapter]) { 
-                    bibleData[book][chapter] = {}; 
-                }
+                if (!bibleData[book]) { bibleData[book] = {}; bookOrder.push(book); }
+                if (!bibleData[book][chapter]) { bibleData[book][chapter] = {}; }
                 bibleData[book][chapter][verse] = content;
             }
         });
     }
 
-    // --- Search Logic (Updated for Bilingual) ---
+    // --- Search Logic ---
     function searchBible() {
         const rawKeyword = document.getElementById('searchInput').value.trim();
         const resultsDiv = document.getElementById('searchResults');
@@ -567,7 +548,6 @@
         
         if (!rawKeyword) { alert(t.alertSearch); return; }
         
-        // CUV needs space removal, KJV does not (but needs lowerCase)
         let searchKey = rawKeyword;
         if (currentLang === 'zh') {
             searchKey = rawKeyword.replace(/\s+/g, '');
@@ -590,13 +570,11 @@
                     for (let ver in bibleData[book][chap]) {
                         const originalText = bibleData[book][chap][ver];
                         let compareText = originalText;
-                        
                         if (currentLang === 'zh') {
                             compareText = originalText.replace(/\s+/g, '');
                         } else {
                             compareText = originalText.toLowerCase();
                         }
-                        
                         if (compareText.includes(searchKey)) {
                             results.push({ book, chap, ver, text: originalText });
                             count++;
@@ -618,7 +596,6 @@
                     <button style="float:right; border:none; background:none; color:var(--text); opacity:0.6; cursor:pointer;" onclick="closeSearch()">${t.closeBtn}</button>
                 </div>`;
                 
-                // Highlight Logic
                 let highlightRegex;
                 if (currentLang === 'zh') {
                     const escaped = searchKey.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
@@ -651,15 +628,13 @@
         updateStartVerses();
         startVerSel.value = ver;
         updateEndVerses();
-        
         document.getElementById('searchInput').value = '';
-        
         displayScripture();
         closeSearch();
         document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // --- UI Logic (Selectors) ---
+    // --- UI Logic ---
     const bookSel = document.getElementById('bookSelect');
     const chapSel = document.getElementById('chapterSelect');
     const startVerSel = document.getElementById('startVerseSelect');
@@ -825,7 +800,6 @@
         displayScripture();
     }
 
-    // --- Prompt Generation (Updated for Bilingual) ---
     function generateHiddenPrompt(ref) {
         let prompt = "";
         if (currentLang === 'zh') {
@@ -854,7 +828,6 @@ Please include the following:
         document.getElementById('hiddenPrompt').value = prompt;
     }
 
-    // --- Gemini API ---
     async function callGeminiAPI() {
         const prompt = document.getElementById('hiddenPrompt').value;
         const t = i18n[currentLang];
@@ -956,7 +929,7 @@ Please include the following:
         document.body.removeChild(textArea);
     }
 
-      // --- 新增功能：讀取網址並自動跳轉 (加在 script 最底) ---
+    // --- V31 新增功能：讀取 URL 參數並自動執行 ---
     function checkUrlParams() {
         const params = new URLSearchParams(window.location.search);
         const bookParam = params.get('book'); 
@@ -965,7 +938,6 @@ Please include the following:
         const endParam = params.get('end');
         const autoParam = params.get('auto');
 
-        // 必須等待資料庫載入完成才有作用
         if (bookParam && chapParam && bibleData[bookParam]) {
             bookSel.value = bookParam;
             updateChapters();
@@ -986,17 +958,15 @@ Please include the following:
                 
                 displayScripture();
 
-                // 自動按鈕邏輯
                 if (autoParam === 'gemini') {
                     setTimeout(() => {
                         document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
                         callGeminiAPI();
-                    }, 1000); // 延遲 1 秒確保畫面載入
+                    }, 1000);
                 }
             }
         }
     }
-
 </script>
 
 </body>
