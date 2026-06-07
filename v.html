@@ -420,10 +420,17 @@
     <!-- ── 朗讀提示（揀完章節後出現）── -->
     <div id="readPromptBar" style="display:none; margin-bottom:20px;">
         <button id="readPromptBtn" class="big-btn btn-green"
-            style="font-size:2rem; min-height:110px; border-radius:20px; box-shadow: 0 8px 28px rgba(27,122,62,0.45); animation: pulse-green 1.5s ease-in-out infinite;"
-            onclick="ttsStart()"
-            aria-label="點此開始廣東話朗讀">
+            style="font-size:2rem; min-height:110px; border-radius:20px; box-shadow: 0 8px 28px rgba(27,122,62,0.45);"
+            onclick="ttsStartNow()"
+            aria-label="點此立即開始廣東話朗讀">
             🔊 點此開始朗讀
+        </button>
+        <div id="countdownText" style="text-align:center; margin-top:12px; font-size:1.3rem; color:#1b7a3e; font-weight:bold;" aria-live="polite"></div>
+        <button id="cancelAutoBtn" class="big-btn btn-outline"
+            style="margin-top:10px; min-height:60px; font-size:1.1rem;"
+            onclick="cancelAutoPlay()"
+            aria-label="取消自動朗讀">
+            ✕ 取消自動朗讀
         </button>
     </div>
     <section id="scriptureSection" aria-label="經文內容">
@@ -940,15 +947,58 @@ function setSpeed(btn) {
 
 // iOS Safari 要求 TTS 必須直接由用戶手勢觸發
 // 揀完章節後顯示大型「立即朗讀」提示，用戶點一下即開始
+let autoPlayTimer  = null; // setInterval handle
+let autoPlayCount  = 3;   // 倒數秒數
+
 function showReadPrompt() {
     const bar = document.getElementById('readPromptBar');
     bar.style.display = 'block';
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // 清除舊計時器
+    cancelAutoPlay(false);
+
+    // 倒數顯示
+    autoPlayCount = 3;
+    const countEl = document.getElementById('countdownText');
+    countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
+
+    autoPlayTimer = setInterval(() => {
+        autoPlayCount--;
+        if (autoPlayCount <= 0) {
+            clearInterval(autoPlayTimer);
+            autoPlayTimer = null;
+            countEl.textContent = '';
+            ttsStartNow(); // 倒數完自動開始
+        } else {
+            countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
+        }
+    }, 1000);
+
     setTimeout(() => document.getElementById('readPromptBtn').focus(), 350);
 }
 
 function hideReadPrompt() {
+    cancelAutoPlay(false);
     document.getElementById('readPromptBar').style.display = 'none';
+    document.getElementById('countdownText').textContent = '';
+}
+
+function cancelAutoPlay(hideBar = true) {
+    if (autoPlayTimer) {
+        clearInterval(autoPlayTimer);
+        autoPlayTimer = null;
+    }
+    document.getElementById('countdownText').textContent = '';
+    if (hideBar) {
+        document.getElementById('readPromptBar').style.display = 'none';
+    }
+}
+
+// 用戶點按鈕或倒數完成都用呢個
+function ttsStartNow() {
+    cancelAutoPlay(false);
+    ttsStart();
 }
 
 function ttsToggle() {
