@@ -998,7 +998,7 @@ function speakCurrent() {
     const el = document.getElementById(`verse-${num}`);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    const utt = new SpeechSynthesisUtterance(`第${num}節。${text}`);
+    const utt = new SpeechSynthesisUtterance(text);
     utt.lang  = 'zh-HK';
     utt.rate  = ttsRate;
     if (ttsVoice) utt.voice = ttsVoice;
