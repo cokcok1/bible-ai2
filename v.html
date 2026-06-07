@@ -699,9 +699,19 @@ function selectChap(chap) {
         el.setAttribute('aria-selected', v === chap ? 'true' : 'false');
     });
     closeAllDropdowns();
-    ttsStop(false);
-    renderScripture(selectedBook, selectedChap);
-    setTimeout(ttsStart, 400);
+
+    // 先完全停止 TTS，等 cancel() 完成後再渲染同開始朗讀
+    ttsPlaying = false;
+    ttsPaused  = false;
+    window.speechSynthesis.cancel();
+    clearHighlight();
+    updateTtsUI();
+
+    setTimeout(() => {
+        renderScripture(selectedBook, selectedChap);
+        // 再等一個 tick 確保 cancel 已清除
+        setTimeout(ttsStart, 300);
+    }, 200);
 }
 
 // ══════════════════════════════════════
