@@ -1,4 +1,678 @@
-// 1. 修改後的選章 Function
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
+    <title>聖經朗讀 — 視障自動版</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="bible-icon.png">
+    <style>
+        :root {
+            --bg:       #ffffff;
+            --bg2:      #f4f6fa;
+            --border:   #d0d7e3;
+            --text:     #1a1a2e;
+            --text2:    #555577;
+            --blue:     #1565c0;
+            --blue-lt:  #e8f0fe;
+            --green:    #1b7a3e;
+            --green-lt: #e6f4ea;
+            --orange:   #c75000;
+            --orange-lt:#fff0e6;
+            --red:      #b71c1c;
+            --red-lt:   #fdeaea;
+            --purple:   #6a1b9a;
+            --purple-lt:#f3e5f5;
+            --gold:     #f57f17;
+            --gold-lt:  #fff8e1;
+            --shadow:   0 4px 18px rgba(0,0,0,0.10);
+            --shadow-sm:0 2px 8px rgba(0,0,0,0.08);
+            --radius:   20px;
+            --radius-sm:12px;
+            --btn-h:    88px;
+            --font-xl:  1.9rem;
+            --font-lg:  1.55rem;
+            --font-md:  1.25rem;
+            --font-sm:  1.05rem;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg2);
+            color: var(--text);
+            font-family: "PingFang HK","Noto Sans TC","Heiti TC",sans-serif;
+            font-size: var(--font-md);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 80px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--blue);
+            padding: 18px 20px 14px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            position: sticky; top: 0; z-index: 200;
+            box-shadow: 0 3px 12px rgba(21,101,192,0.3);
+        }
+        .site-header h1 { font-size: var(--font-xl); color: #fff; font-weight: 900; flex: 1; }
+        .back-link {
+            color: #fff; font-size: var(--font-sm); font-weight: bold;
+            text-decoration: none; border: 2.5px solid rgba(255,255,255,0.8);
+            border-radius: 10px; padding: 8px 14px; white-space: nowrap;
+        }
+        .back-link:focus { outline: 4px solid #fff; }
+
+        /* ── Main ── */
+        .main { padding: 24px 16px; max-width: 680px; margin: 0 auto; }
+
+        /* ── Loading ── */
+        #loadingSection { text-align: center; padding: 50px 20px; }
+        #loadingSection p { font-size: var(--font-lg); color: var(--blue); font-weight: bold; margin-bottom: 20px; }
+        .progress-bar { width: 100%; height: 18px; background: var(--border); border-radius: 9px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--blue); width: 0%; transition: width 0.3s; }
+
+        /* ── 卡片 ── */
+        .card {
+            background: var(--bg); border-radius: var(--radius);
+            padding: 22px 18px; margin-bottom: 20px;
+            box-shadow: var(--shadow-sm); border: 2px solid var(--border);
+        }
+        .card.highlight { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21,101,192,0.15), var(--shadow); }
+
+        .step-label {
+            display: block; font-size: var(--font-sm); font-weight: 900;
+            color: var(--blue); letter-spacing: 0.06em;
+            text-transform: uppercase; margin-bottom: 14px;
+        }
+
+        /* ── 大按鈕 ── */
+        .big-btn {
+            width: 100%; min-height: var(--btn-h);
+            font-size: var(--font-lg); font-weight: 900;
+            border: none; border-radius: var(--radius-sm);
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 12px; padding: 14px 16px;
+            transition: transform 0.1s, box-shadow 0.15s;
+            line-height: 1.2; text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .big-btn:active { transform: scale(0.97); box-shadow: none; }
+        .big-btn:focus { outline: 4px solid var(--blue); outline-offset: 3px; }
+        .big-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+        .btn-blue   { background: var(--blue);   color: #fff; box-shadow: 0 5px 18px rgba(21,101,192,0.35); }
+        .btn-green  { background: var(--green);  color: #fff; box-shadow: 0 5px 18px rgba(27,122,62,0.35); }
+        .btn-orange { background: var(--orange); color: #fff; box-shadow: 0 5px 18px rgba(199,80,0,0.35); }
+        .btn-red    { background: var(--red);    color: #fff; box-shadow: 0 5px 18px rgba(183,28,28,0.35); }
+        .btn-purple { background: var(--purple); color: #fff; box-shadow: 0 5px 18px rgba(106,27,154,0.35); }
+        .btn-gold   { background: var(--gold);   color: #fff; box-shadow: 0 5px 18px rgba(245,127,23,0.40); }
+        .btn-outline {
+            background: var(--bg); color: var(--blue);
+            border: 3px solid var(--blue); box-shadow: none;
+        }
+        .btn-outline:hover { background: var(--blue-lt); }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+
+        /* ══════════════════════════════════════════
+           自製大型下拉選單
+        ══════════════════════════════════════════ */
+        .custom-select-wrap { position: relative; }
+
+        .custom-select-trigger {
+            width: 100%; min-height: var(--btn-h);
+            background: var(--bg); border: 3px solid var(--blue);
+            border-radius: var(--radius-sm); padding: 0 60px 0 20px;
+            font-size: var(--font-lg); font-weight: bold; color: var(--text);
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px;
+            box-shadow: var(--shadow-sm); transition: border-color 0.15s;
+            text-align: left;
+        }
+        .custom-select-trigger:focus { outline: 4px solid var(--blue); outline-offset: 2px; }
+        .custom-select-trigger .arrow {
+            position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+            font-size: 1.8rem; color: var(--blue); pointer-events: none;
+            transition: transform 0.2s;
+        }
+        .custom-select-trigger.open .arrow { transform: translateY(-50%) rotate(180deg); }
+        .custom-select-trigger.placeholder { color: var(--text2); }
+        .custom-select-trigger:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* 下拉列表覆蓋層 */
+        .custom-dropdown {
+            display: none; position: fixed;
+            left: 0; right: 0; bottom: 0;
+            background: var(--bg);
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+            z-index: 500;
+            max-height: 72vh;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .custom-dropdown.open { display: flex; }
+
+        .dropdown-header {
+            padding: 16px 20px 12px;
+            border-bottom: 2px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg); flex-shrink: 0;
+        }
+        .dropdown-title { font-size: var(--font-lg); font-weight: 900; color: var(--blue); }
+        .dropdown-close {
+            width: 56px; height: 56px; border: none; background: var(--red-lt);
+            color: var(--red); font-size: 1.8rem; font-weight: bold;
+            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .dropdown-close:focus { outline: 4px solid var(--red); }
+
+        .dropdown-list {
+            overflow-y: auto; flex: 1;
+            -webkit-overflow-scrolling: touch;
+        }
+        .dropdown-item {
+            padding: 22px 24px; font-size: var(--font-lg); font-weight: bold;
+            color: var(--text); border-bottom: 1.5px solid var(--bg2);
+            cursor: pointer; display: flex; align-items: center; gap: 12px;
+            transition: background 0.1s;
+        }
+        .dropdown-item:active { background: var(--blue-lt); }
+        .dropdown-item.selected { background: var(--blue-lt); color: var(--blue); }
+        .dropdown-item .item-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+        /* 遮罩 */
+        .overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 499;
+        }
+        .overlay.open { display: block; }
+
+        /* ══════════════════════════════════════════
+           語音搜尋
+        ══════════════════════════════════════════ */
+        .voice-card {
+            background: var(--purple-lt); border: 3px solid var(--purple);
+            border-radius: var(--radius); padding: 22px 18px; margin-bottom: 20px;
+        }
+        .voice-label {
+            display: block; font-size: var(--font-sm); font-weight: 900;
+            color: var(--purple); text-transform: uppercase;
+            letter-spacing: 0.06em; margin-bottom: 14px;
+        }
+        .voice-result-box {
+            min-height: 70px; background: var(--bg);
+            border: 2.5px solid var(--border); border-radius: var(--radius-sm);
+            padding: 14px 16px; margin: 14px 0;
+            font-size: var(--font-lg); color: var(--text); font-weight: bold;
+            display: none; line-height: 1.5;
+        }
+        .voice-result-box.active { display: block; border-color: var(--purple); }
+        .voice-hint {
+            font-size: var(--font-sm); color: var(--text2); margin-top: 10px;
+            line-height: 1.6;
+        }
+        .voice-hint span { color: var(--purple); font-weight: bold; }
+
+        /* ── 語音按鈕動畫 ── */
+        @keyframes pulse-ring {
+            0%   { transform: scale(1);    opacity: 0.7; }
+            50%  { transform: scale(1.08); opacity: 0.4; }
+            100% { transform: scale(1);    opacity: 0.7; }
+        }
+        .listening { animation: pulse-ring 1.2s ease-in-out infinite; }
+
+        /* ── 朗讀狀態 ── */
+        #ttsStatusBar {
+            display: none; background: var(--green-lt);
+            border: 3px solid var(--green); border-radius: var(--radius);
+            padding: 18px 20px; margin-bottom: 20px;
+        }
+        #ttsStatusBar.paused { background: var(--gold-lt); border-color: var(--gold); }
+        #ttsStatusBar.done   { background: var(--blue-lt); border-color: var(--blue); }
+
+        .tts-status-label { font-size: var(--font-sm); font-weight: 900; color: var(--green); margin-bottom: 6px; }
+        #ttsStatusBar.paused .tts-status-label { color: var(--gold); }
+        #ttsStatusBar.done   .tts-status-label { color: var(--blue); }
+        #ttsCurrentVerse { font-size: var(--font-xl); font-weight: 900; color: var(--text); }
+
+        /* 語速 */
+        .speed-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .speed-btn {
+            flex: 1; min-width: 56px; height: 64px;
+            background: var(--bg); color: var(--text);
+            border: 2.5px solid var(--border); border-radius: var(--radius-sm);
+            font-size: var(--font-sm); font-weight: bold; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .speed-btn:focus { outline: 4px solid var(--blue); }
+        .speed-btn.sel { background: var(--green); color: #fff; border-color: var(--green); }
+
+        /* ── 經文 ── */
+        #scriptureSection { display: none; }
+        .scripture-ref {
+            font-size: var(--font-xl); font-weight: 900; color: var(--blue);
+            margin-bottom: 20px; line-height: 1.3;
+        }
+        .verse-block {
+            padding: 18px 0; border-bottom: 2px solid var(--bg2);
+            display: flex; gap: 14px; align-items: flex-start;
+            border-radius: 10px; transition: background 0.2s;
+        }
+        .verse-block:last-child { border-bottom: none; }
+        .verse-block.reading {
+            background: var(--gold-lt);
+            border-bottom-color: var(--gold);
+            padding-left: 10px; padding-right: 10px;
+        }
+        .verse-number {
+            font-size: var(--font-md); color: var(--orange); font-weight: 900;
+            min-width: 52px; text-align: right; flex-shrink: 0; padding-top: 3px;
+        }
+        .verse-text { font-size: var(--font-lg); color: var(--text); line-height: 1.8; }
+
+        .sr-only {
+            position: absolute; width: 1px; height: 1px;
+            padding: 0; margin: -1px; overflow: hidden;
+            clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+        }
+
+        :focus-visible { outline: 4px solid var(--blue) !important; outline-offset: 3px; }
+
+        @media (max-width: 480px) {
+            :root { --font-xl: 1.6rem; --font-lg: 1.35rem; --btn-h: 80px; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header" role="banner">
+    <h1>📖 聖經朗讀</h1>
+    <a href="index.html" class="back-link" aria-label="返回標準版">標準版</a>
+</header>
+
+<div class="overlay" id="overlay" onclick="closeAllDropdowns()"></div>
+
+<div class="custom-dropdown" id="bookDropdown" role="dialog" aria-modal="true" aria-label="選擇書卷">
+    <div class="dropdown-header">
+        <span class="dropdown-title">📚 選擇書卷</span>
+        <button class="dropdown-close" onclick="closeAllDropdowns()" aria-label="關閉">✕</button>
+    </div>
+    <div class="dropdown-list" id="bookList" role="listbox" aria-label="書卷列表"></div>
+</div>
+
+<div class="custom-dropdown" id="chapDropdown" role="dialog" aria-modal="true" aria-label="選擇章數">
+    <div class="dropdown-header">
+        <span class="dropdown-title" id="chapDropdownTitle">📖 選擇章數</span>
+        <button class="dropdown-close" onclick="closeAllDropdowns()" aria-label="關閉">✕</button>
+    </div>
+    <div class="dropdown-list" id="chapList" role="listbox" aria-label="章數列表"></div>
+</div>
+
+<main class="main" role="main">
+
+    <section id="loadingSection" aria-live="polite">
+        <p id="loadingText">正在下載聖經資料庫…</p>
+        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </section>
+
+    <div id="mainControls" style="display:none;">
+
+        <div class="voice-card" role="region" aria-label="語音搜尋章節">
+            <span class="voice-label">🎙️ 語音搜尋章節</span>
+            <button class="big-btn btn-purple" id="voiceBtn"
+                onclick="startVoice()"
+                aria-label="按此開始語音輸入，說出書卷同章數">
+                🎙️ 按此說出章節
+            </button>
+            <div class="voice-result-box" id="voiceResultBox" aria-live="polite" aria-label="語音識別結果"></div>
+            <p class="voice-hint">
+                例子：<span>「約翰福音三章」</span>、<span>「詩篇二十三篇」</span>、<span>「創世記一章」</span>
+            </p>
+        </div>
+
+        <div class="card" id="bookCard">
+            <span class="step-label" id="step1label">第一步：選書卷</span>
+            <div class="custom-select-wrap">
+                <button class="custom-select-trigger placeholder" id="bookTrigger"
+                    onclick="openDropdown('book')"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-label="選擇書卷，目前未選擇">
+                    <span id="bookTriggerText">── 請選擇書卷 ──</span>
+                    <span class="arrow" aria-hidden="true">▾</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="chapCard">
+            <span class="step-label">第二步：選章數</span>
+            <div class="custom-select-wrap">
+                <button class="custom-select-trigger placeholder" id="chapTrigger"
+                    onclick="openDropdown('chap')"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-label="選擇章數，請先選書卷"
+                    disabled>
+                    <span id="chapTriggerText">── 請先選書卷 ──</span>
+                    <span class="arrow" aria-hidden="true">▾</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <span class="step-label">朗讀語速</span>
+            <div class="speed-row" role="group" aria-label="選擇朗讀語速">
+                <button class="speed-btn"     data-rate="0.6" onclick="setSpeed(this)" aria-pressed="false">慢</button>
+                <button class="speed-btn"     data-rate="0.8" onclick="setSpeed(this)" aria-pressed="false">稍慢</button>
+                <button class="speed-btn sel" data-rate="1.0" onclick="setSpeed(this)" aria-pressed="true">正常</button>
+                <button class="speed-btn"     data-rate="1.2" onclick="setSpeed(this)" aria-pressed="false">稍快</button>
+                <button class="speed-btn"     data-rate="1.5" onclick="setSpeed(this)" aria-pressed="false">快</button>
+            </div>
+        </div>
+
+        <div class="two-col" id="navRow" style="display:none;">
+            <button class="big-btn btn-outline" onclick="prevChap()" aria-label="上一章">❮ 上一章</button>
+            <button class="big-btn btn-outline" onclick="nextChap()" aria-label="下一章">下一章 ❯</button>
+        </div>
+
+    </div><div id="ttsStatusBar" role="status" aria-live="polite" aria-atomic="true">
+        <div class="tts-status-label" id="ttsLabel">🔊 正在朗讀</div>
+        <div id="ttsCurrentVerse"></div>
+    </div>
+
+    <div id="ttsControls" style="display:none; margin-bottom:20px;">
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
+            <button class="big-btn btn-green" id="ttsPlayBtn"
+                onclick="ttsToggle()" aria-label="開始廣東話朗讀">
+                ▶ 開始朗讀
+            </button>
+            <button class="big-btn btn-red" onclick="ttsStop()" aria-label="停止朗讀">
+                ⏹ 停止
+            </button>
+        </div>
+    </div>
+
+    <section id="scriptureSection" aria-label="經文內容">
+        <div class="scripture-ref" id="scriptureRef"></div>
+        <div id="verseList" role="list"></div>
+    </section>
+
+</main>
+
+<div id="a11yAnnouncer" class="sr-only" aria-live="polite"></div>
+<div class="sr-only" aria-label="鍵盤快捷鍵：空白鍵 暫停或繼續，Escape 停止，左箭頭 上一章，右箭頭 下一章"></div>
+
+<script>
+// ══════════════════════════════════════
+// 設定
+// ══════════════════════════════════════
+const BIBLE_URL = 'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt';
+
+let bibleData  = {};
+let bookOrder  = [];
+let selectedBook = '';
+let selectedChap = 0;
+
+let ttsVerses  = [];
+let ttsIndex   = 0;
+let ttsPlaying = false;
+let ttsPaused  = false;
+let ttsRate    = 1.0;
+let ttsVoice   = null;
+
+// 書卷名稱對照表（語音辨識用）
+const BOOK_ALIASES = {
+    '創世記':['創世記','創世','Genesis'],
+    '出埃及記':['出埃及記','出埃及','Exodus'],
+    '利未記':['利未記','利未','Leviticus'],
+    '民數記':['民數記','民數','Numbers'],
+    '申命記':['申命記','申命','Deuteronomy'],
+    '約書亞記':['約書亞記','約書亞','Joshua'],
+    '士師記':['士師記','士師','Judges'],
+    '路得記':['路得記','路得','Ruth'],
+    '撒母耳記上':['撒母耳記上','撒上','Samuel','1Samuel'],
+    '撒母耳記下':['撒母耳記下','撒下','2Samuel'],
+    '列王紀上':['列王紀上','王上','Kings','1Kings'],
+    '列王紀下':['列王紀下','王下','2Kings'],
+    '歷代志上':['歷代志上','代上','Chronicles','1Chronicles'],
+    '歷代志下':['歷代志下','代下','2Chronicles'],
+    '以斯拉記':['以斯拉記','以斯拉','Ezra'],
+    '尼希米記':['尼希米記','尼希米','Nehemiah'],
+    '以斯帖記':['以斯帖記','以斯帖','Esther'],
+    '約伯記':['約伯記','約伯','Job'],
+    '詩篇':['詩篇','詩','Psalms','Psalm'],
+    '箴言':['箴言','箴','Proverbs'],
+    '傳道書':['傳道書','傳道','Ecclesiastes'],
+    '雅歌':['雅歌','Song'],
+    '以賽亞書':['以賽亞書','以賽亞','Isaiah'],
+    '耶利米書':['耶利米書','耶利米','Jeremiah'],
+    '耶利米哀歌':['耶利米哀歌','哀歌','Lamentations'],
+    '以西結書':['以西結書','以西結','Ezekiel'],
+    '但以理書':['但以理書','但以理','Daniel'],
+    '何西阿書':['何西阿書','何西阿','Hosea'],
+    '約珥書':['約珥書','約珥','Joel'],
+    '阿摩司書':['阿摩司書','阿摩司','Amos'],
+    '俄巴底亞書':['俄巴底亞書','俄巴底亞','Obadiah'],
+    '約拿書':['約拿書','約拿','Jonah'],
+    '彌迦書':['彌迦書','彌迦','Micah'],
+    '那鴻書':['那鴻書','那鴻','Nahum'],
+    '哈巴谷書':['哈巴谷書','哈巴谷','Habakkuk'],
+    '西番雅書':['西番雅書','西番雅','Zephaniah'],
+    '哈該書':['哈該書','哈該','Haggai'],
+    '撒迦利亞書':['撒迦利亞書','撒迦利亞','Zechariah'],
+    '瑪拉基書':['瑪拉基書','瑪拉基','Malachi'],
+    '馬太福音':['馬太福音','馬太','Matthew'],
+    '馬可福音':['馬可福音','馬可','Mark'],
+    '路加福音':['路加福音','路加','Luke'],
+    '約翰福音':['約翰福音','約翰','John'],
+    '使徒行傳':['使徒行傳','使徒','Acts'],
+    '羅馬書':['羅馬書','羅馬','Romans'],
+    '哥林多前書':['哥林多前書','哥林多前','林前','1Corinthians'],
+    '哥林多後書':['哥林多後書','哥林多後','林後','2Corinthians'],
+    '加拉太書':['加拉太書','加拉太','Galatians'],
+    '以弗所書':['以弗所書','以弗所','Ephesians'],
+    '腓立比書':['腓立比書','腓立比','Philippians'],
+    '歌羅西書':['歌羅西書','歌羅西','Colossians'],
+    '帖撒羅尼迦前書':['帖撒羅尼迦前書','帖前','1Thessalonians'],
+    '帖撒羅尼迦後書':['帖撒羅尼迦後書','帖後','2Thessalonians'],
+    '提摩太前書':['提摩太前書','提前','1Timothy'],
+    '提摩太後書':['提摩太後書','提後','2Timothy'],
+    '提多書':['提多書','提多','Titus'],
+    '腓利門書':['腓利門書','腓利門','Philemon'],
+    '希伯來書':['希伯來書','希伯來','Hebrews'],
+    '雅各書':['雅各書','雅各','James'],
+    '彼得前書':['彼得前書','彼前','1Peter'],
+    '彼得後書':['彼得後書','彼後','2Letter'],
+    '約翰一書':['約翰一書','約一','1John'],
+    '約翰二書':['約翰二書','約二','2John'],
+    '約翰三書':['約翰三書','約三','3John'],
+    '猶大書':['猶大書','猶大','Jude'],
+    '啟示錄':['啟示錄','啟示','Revelation'],
+};
+
+const ZH_NUMS = {
+    '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
+    '十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,
+    '二十':20,'二十一':21,'二十二':22,'二十三':23,'二十四':24,'二十五':25,
+    '二十六':26,'二十七':27,'二十八':28,'二十九':29,'三十':30,
+    '三十一':31,'三十二':32,'三十三':33,'三十四':34,'三十五':35,
+    '三十六':36,'三十七':37,'三十八':38,'三十九':39,'四十':40,
+    '四幕一':41,'四十二':42,'四十三':43,'四十四':44,'四十五':45,
+    '四十六':46,'四十七':47,'四十八':48,'四十九':49,'五十':50,
+    '一百':100,'一百一':101,'一百二':102,'一百三':103,'一百四':104,'一百五':105,
+    '一百五十':150,'一百五十一':151,
+};
+
+// ══════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════
+window.onload = async function() {
+    initVoice();
+    await loadBible();
+    setupKeyboard();
+};
+
+function initVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const findVoice = () => {
+        const vs = window.speechSynthesis.getVoices();
+        ttsVoice = vs.find(v => v.lang === 'zh-HK')
+                || vs.find(v => v.lang.startsWith('zh-HK'))
+                || vs.find(v => v.lang.startsWith('zh'))
+                || null;
+    };
+    findVoice();
+    window.speechSynthesis.onvoiceschanged = findVoice;
+}
+
+// ══════════════════════════════════════
+// 載入聖經
+// ══════════════════════════════════════
+async function loadBible() {
+    try {
+        const res = await fetch(BIBLE_URL);
+        if (!res.ok) throw new Error('網絡錯誤');
+        const reader = res.body.getReader();
+        const total  = +res.headers.get('Content-Length');
+        let recv = 0, chunks = [];
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            recv += value.length;
+            if (total) {
+                const pct = Math.round(recv / total * 100);
+                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressBar').setAttribute('aria-valuenow', pct);
+            }
+        }
+        document.getElementById('loadingText').textContent = '解析中…';
+        parseBible(new TextDecoder('utf-8').decode(concatArrays(chunks)));
+        document.getElementById('loadingSection').style.display = 'none';
+        document.getElementById('mainControls').style.display = 'block';
+        populateBookDropdown();
+    } catch (e) {
+        document.getElementById('loadingText').textContent = '載入失敗：' + e.message;
+    }
+}
+
+function concatArrays(arrays) {
+    const len = arrays.reduce((s,a) => s + a.length, 0);
+    const out = new Uint8Array(len);
+    let p = 0;
+    for (const a of arrays) { out.set(a, p); p += a.length; }
+    return out;
+}
+
+function parseBible(raw) {
+    const re = /^(.+?)\s+(\d+):(\d+)\s+(.*)$/;
+    for (const line of raw.split('\n')) {
+        const m = line.trim().match(re);
+        if (!m) continue;
+        const [, book, chap, ver, content] = m;
+        const c = parseInt(chap), v = parseInt(ver);
+        if (!bibleData[book]) { bibleData[book] = {}; bookOrder.push(book); }
+        if (!bibleData[book][c]) bibleData[book][c] = {};
+        bibleData[book][c][v] = content;
+    }
+}
+
+// ══════════════════════════════════════
+// 自製下拉選單
+// ══════════════════════════════════════
+function populateBookDropdown() {
+    const list = document.getElementById('bookList');
+    bookOrder.forEach((b, i) => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.setAttribute('tabindex', '0');
+        item.dataset.value = b;
+        item.innerHTML = `<span class="item-icon">📗</span>${b}`;
+        item.onclick = () => selectBook(b);
+        item.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') selectBook(b); };
+        list.appendChild(item);
+    });
+}
+
+function populateChapDropdown(book) {
+    const list = document.getElementById('chapList');
+    list.innerHTML = '';
+    document.getElementById('chapDropdownTitle').textContent = `📖 ${book} — 選章數`;
+    const chaps = Object.keys(bibleData[book]).map(Number).sort((a,b)=>a-b);
+    chaps.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.setAttribute('tabindex', '0');
+        item.dataset.value = c;
+        item.innerHTML = `<span class="item-icon">📄</span>第 ${c} 章`;
+        item.onclick = () => selectChap(c);
+        item.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') selectChap(c); };
+        list.appendChild(item);
+    });
+}
+
+function openDropdown(type) {
+    if (type === 'chap' && !selectedBook) return;
+    const dropId  = type === 'book' ? 'bookDropdown' : 'chapDropdown';
+    const trigger = type === 'book' ? 'bookTrigger'  : 'chapTrigger';
+    document.getElementById(dropId).classList.add('open');
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById(trigger).classList.add('open');
+    document.getElementById(trigger).setAttribute('aria-expanded', 'true');
+    
+    document.querySelector('.site-header').setAttribute('aria-hidden', 'true');
+    document.querySelector('.main').setAttribute('aria-hidden', 'true');
+
+    setTimeout(() => {
+        const first = document.querySelector(`#${dropId === 'bookDropdown' ? 'bookList' : 'chapList'} .dropdown-item`);
+        if (first) first.focus();
+    }, 100);
+}
+
+function closeAllDropdowns() {
+    ['bookDropdown','chapDropdown'].forEach(id => {
+        document.getElementById(id).classList.remove('open');
+    });
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('bookTrigger').classList.remove('open');
+    document.getElementById('chapTrigger').classList.remove('open');
+    document.getElementById('bookTrigger').setAttribute('aria-expanded','false');
+    document.getElementById('chapTrigger').setAttribute('aria-expanded','false');
+
+    document.querySelector('.site-header').removeAttribute('aria-hidden');
+    document.querySelector('.main').removeAttribute('aria-hidden');
+}
+
+function selectBook(book) {
+    selectedBook = book;
+    const trigger = document.getElementById('bookTrigger');
+    trigger.classList.remove('placeholder');
+    document.getElementById('bookTriggerText').textContent = book;
+    trigger.setAttribute('aria-label', `書卷：${book}，點擊更改`);
+    document.querySelectorAll('#bookList .dropdown-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === book);
+        el.setAttribute('aria-selected', el.dataset.value === book ? 'true' : 'false');
+    });
+    populateChapDropdown(book);
+    const chapTrigger = document.getElementById('chapTrigger');
+    chapTrigger.disabled = false;
+    chapTrigger.classList.add('placeholder');
+    document.getElementById('chapTriggerText').textContent = '── 請選擇章數 ──';
+    chapTrigger.setAttribute('aria-label', `選擇 ${book} 章數`);
+    closeAllDropdowns();
+    ttsStop(false);
+    setTimeout(() => openDropdown('chap'), 250);
+}
+
 function selectChap(chap) {
     selectedChap = chap;
 
@@ -16,19 +690,223 @@ function selectChap(chap) {
     // 渲染經文內容
     renderScripture(selectedBook, selectedChap);
     
-    // 啟動全新的「語音無縫倒數」
+    // 啟動無遮擋語音倒數
     initAutoPlay(); 
 }
 
-// 2. 全新升級：利用語音隊列破解封鎖的倒數機制
+// ══════════════════════════════════════
+// 語音搜尋
+// ══════════════════════════════════════
+function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('你的裝置不支援語音輸入，請使用 iPhone Safari 或 Chrome。');
+        return;
+    }
+
+    const btn = document.getElementById('voiceBtn');
+    const resultBox = document.getElementById('voiceResultBox');
+
+    const recog = new SpeechRecognition();
+    recog.lang = 'zh-HK';
+    recog.continuous = false;
+    recog.interimResults = false;
+    recog.maxAlternatives = 3;
+
+    btn.innerHTML = '🔴 聆聽中…請說出章節';
+    btn.classList.add('listening');
+    btn.disabled = true;
+    resultBox.className = 'voice-result-box active';
+    resultBox.textContent = '聆聽中…';
+
+    recog.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        resultBox.textContent = `你說：「${transcript}」`;
+        parseVoiceInput(transcript);
+    };
+
+    recog.onerror = (e) => {
+        resultBox.textContent = `語音錯誤：${e.error}，請再試。`;
+    };
+
+    recog.onend = () => {
+        btn.innerHTML = '🎙️ 按此說出章節';
+        btn.classList.remove('listening');
+        btn.disabled = false;
+    };
+
+    recog.start();
+}
+
+function parseVoiceInput(text) {
+    const resultBox = document.getElementById('voiceResultBox');
+
+    const allAliases = [];
+    for (const [canonical, aliases] of Object.entries(BOOK_ALIASES)) {
+        if (!bibleData[canonical]) continue;
+        aliases.forEach(alias => {
+            allAliases.push({ canonical, alias });
+        });
+    }
+    allAliases.sort((a, b) => b.alias.length - a.alias.length);
+
+    let matchedBook = null;
+    for (const item of allAliases) {
+        if (text.includes(item.alias)) {
+            matchedBook = item.canonical;
+            break; 
+        }
+    }
+    if (!matchedBook) {
+        for (const b of bookOrder) {
+            if (text.includes(b)) { matchedBook = b; break; }
+        }
+    }
+
+    let matchedChap = null;
+    const zhKeys = Object.keys(ZH_NUMS).sort((a,b) => b.length - a.length);
+    for (const zh of zhKeys) {
+        const re = new RegExp(zh + '[章篇]');
+        if (re.test(text)) { matchedChap = ZH_NUMS[zh]; break; }
+    }
+    if (!matchedChap) {
+        const m = text.match(/(\d+)\s*[章篇]/);
+        if (m) matchedChap = parseInt(m[1]);
+    }
+
+    if (!matchedBook && !matchedChap) {
+        resultBox.textContent += '\n❌ 未能識別書卷或章數，請再試。';
+        return;
+    }
+
+    if (matchedBook && matchedChap) {
+        if (!bibleData[matchedBook]?.[matchedChap]) {
+            resultBox.textContent += `\n❌ ${matchedBook} 冇第 ${matchedChap} 章`;
+            return;
+        }
+        resultBox.textContent += `\n✅ 跳去 ${matchedBook} 第 ${matchedChap} 章`;
+        selectBook(matchedBook);
+        setTimeout(() => selectChap(matchedChap), 300);
+    } else if (matchedBook) {
+        resultBox.textContent += `\n✅ 已選 ${matchedBook}，請再說章數`;
+        selectBook(matchedBook);
+    } else {
+        if (selectedBook && bibleData[selectedBook]?.[matchedChap]) {
+            resultBox.textContent += `\n✅ 跳去 ${selectedBook} 第 ${matchedChap} 章`;
+            selectChap(matchedChap);
+        } else {
+            resultBox.textContent += `\n❓ 請先選擇書卷`;
+        }
+    }
+}
+
+// ══════════════════════════════════════
+// 上下章
+// ══════════════════════════════════════
+function prevChap() {
+    if (!selectedBook) return;
+    const prev = selectedChap - 1;
+    if (bibleData[selectedBook]?.[prev]) {
+        selectChap(prev);
+    } else {
+        const idx = bookOrder.indexOf(selectedBook);
+        if (idx > 0) {
+            const prevBook = bookOrder[idx - 1];
+            const chaps = Object.keys(bibleData[prevBook]).map(Number);
+            selectBook(prevBook);
+            setTimeout(() => selectChap(Math.max(...chaps)), 300);
+        }
+    }
+}
+
+// ══════════════════════════════════════
+// 下一章
+// ══════════════════════════════════════
+function nextChap() {
+    if (!selectedBook) return;
+    const nxt = selectedChap + 1;
+    if (bibleData[selectedBook]?.[nxt]) {
+        selectChap(nxt);
+    } else {
+        const idx = bookOrder.indexOf(selectedBook);
+        if (idx < bookOrder.length - 1) {
+            const nextBook = bookOrder[idx + 1];
+            selectBook(nextBook);
+            setTimeout(() => selectChap(1), 300);
+        }
+    }
+}
+
+// ══════════════════════════════════════
+// 渲染經文
+// ══════════════════════════════════════
+function renderScripture(book, chap) {
+    document.getElementById('scriptureRef').textContent = `${book} 第 ${chap} 章`;
+    const verseData = bibleData[book][chap];
+    const nums = Object.keys(verseData).map(Number).sort((a,b)=>a-b);
+    ttsVerses = nums.map(n => ({ num: n, text: verseData[n] }));
+
+    const list = document.getElementById('verseList');
+    list.innerHTML = '';
+    ttsVerses.forEach(({ num, text }) => {
+        const block = document.createElement('div');
+        block.className = 'verse-block';
+        block.id = `verse-${num}`;
+        block.setAttribute('role', 'listitem');
+        block.setAttribute('aria-label', `第 ${num} 節：${text}`);
+
+        const numEl = document.createElement('div');
+        numEl.className = 'verse-number';
+        numEl.setAttribute('aria-hidden', 'true');
+        numEl.textContent = num;
+
+        const textEl = document.createElement('div');
+        textEl.className = 'verse-text';
+        textEl.textContent = text;
+
+        block.appendChild(numEl);
+        block.appendChild(textEl);
+        list.appendChild(block);
+    });
+
+    document.getElementById('scriptureSection').style.display = 'block';
+    document.getElementById('ttsControls').style.display = 'block';
+    document.getElementById('navRow').style.display = 'grid';
+}
+
+// ══════════════════════════════════════
+// 語速
+// ══════════════════════════════════════
+function setSpeed(btn) {
+    document.querySelectorAll('.speed-btn').forEach(b => {
+        b.classList.remove('sel');
+        b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('sel');
+    btn.setAttribute('aria-pressed', 'true');
+    ttsRate = parseFloat(btn.dataset.rate);
+
+    const speedText = btn.textContent;
+    document.getElementById('a11yAnnouncer').textContent = `語速已設定為${speedText}`;
+
+    if (ttsPlaying && !ttsPaused) {
+        const statusLabel = document.getElementById('ttsLabel').textContent;
+        if (!statusLabel.includes('預備')) {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            setTimeout(speakCurrent, 100);
+        }
+    }
+}
+
+// ══════════════════════════════════════
+// TTS 語音朗讀核心（內建語音隊列破解倒數）
+// ══════════════════════════════════════
+
 function initAutoPlay() {
-    // 先清空任何舊的計時器與正在播放的語音
-    if (autoPlayTimer) { clearInterval(autoPlayTimer); autoPlayTimer = null; }
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     
     ttsPlaying = true;
     ttsPaused = false;
-    updateTtsUI();
 
     const statusBar = document.getElementById('ttsStatusBar');
     const statusLabel = document.getElementById('ttsLabel');
@@ -39,25 +917,27 @@ function initAutoPlay() {
     statusLabel.textContent = '🕒 自動朗讀預備';
     currentVerse.textContent = '3 秒後將自動播放...';
     
+    updateTtsUI();
+
     // 滾動畫面到經文開始處
     document.getElementById('scriptureSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     if (!('speechSynthesis' in window) || !ttsVerses.length) return;
 
-    // 建立倒數語音物件 (在 click 事件內同步建立並播放，100% 破解封鎖)
+    // 建立倒數語音物件（在點擊事件同步區間內直接建立，獲取100%授權）
     const uReady = new SpeechSynthesisUtterance("準備朗讀");
     const u3     = new SpeechSynthesisUtterance("三");
     const u2     = new SpeechSynthesisUtterance("二");
     const u1     = new SpeechSynthesisUtterance("一");
 
-    // 統一設定廣東話配音同語速
+    // 統一設定廣東話同語速
     [uReady, u3, u2, u1].forEach(u => {
         u.lang = 'zh-HK';
         u.rate = ttsRate;
         if (ttsVoice) u.voice = ttsVoice;
     });
 
-    // 聽覺與視覺同步：當語音讀到該字時，畫面的字體跟住變
+    // 聽覺與視覺聯動
     uReady.onstart = () => { 
         currentVerse.textContent = "準備朗讀..."; 
         document.getElementById('a11yAnnouncer').textContent = "準備自動朗讀經文";
@@ -66,29 +946,36 @@ function initAutoPlay() {
     u2.onstart = () => { currentVerse.textContent = "🕒 2 秒..."; };
     u1.onstart = () => { currentVerse.textContent = "🕒 1 秒..."; };
 
-    // 【核心無縫接軌】當數到「一」完結的瞬間，立刻開始讀第一節經文
+    // 倒數完成，無縫接軌播放經文
     u1.onend = () => {
         if (!ttsPlaying) return;
         ttsIndex = 0;
         updateTtsUI();
-        speakCurrent(); // 呼叫原本讀經文的內容
-    };
-
-    // 安全計：萬一倒數語音在某些舊機出錯，直接切換去讀經文
-    uReady.onerror = u3.onerror = u2.onerror = u1.onerror = (e) => {
-        if (e.error === 'interrupted' || e.error === 'canceled') return;
-        ttsIndex = 0;
         speakCurrent();
     };
 
-    // 一口氣將倒數指令塞入瀏覽器（利用當前的 Click 授權一併解鎖）
+    // 容錯機制
+    uReady.onerror = u3.onerror = u2.onerror = u1.onerror = (e) => {
+        if (e.error === 'interrupted' || e.error === 'canceled') return;
+        ttsStartDirectly();
+    };
+
+    // 瞬間送入播放隊列
     window.speechSynthesis.speak(uReady);
     window.speechSynthesis.speak(u3);
     window.speechSynthesis.speak(u2);
     window.speechSynthesis.speak(u1);
 }
 
-// 3. 優化控制按鈕：如果在倒數期間點擊了「立即播放」，直接跳過倒數開播
+function ttsStartDirectly() {
+    if (!('speechSynthesis' in window) || !ttsVerses.length) return;
+    ttsIndex = 0;
+    ttsPlaying = true;
+    ttsPaused = false;
+    updateTtsUI();
+    speakCurrent();
+}
+
 function ttsToggle() {
     if (!('speechSynthesis' in window)) {
         alert('你的裝置不支援語音朗讀。');
@@ -96,7 +983,7 @@ function ttsToggle() {
     }
     if (!ttsVerses.length) return;
 
-    // 如果在語音倒數預備期間點擊了按鈕，直接取消倒數，立刻讀經文
+    // 如果在倒數預備期間點擊，直接取消倒數跳去經文
     const statusLabel = document.getElementById('ttsLabel').textContent;
     if (statusLabel.includes('預備')) {
         window.speechSynthesis.cancel();
@@ -105,8 +992,7 @@ function ttsToggle() {
     }
 
     if (!ttsPlaying) {
-        ttsIndex = 0; ttsPlaying = true; ttsPaused = false;
-        updateTtsUI(); speakCurrent();
+        ttsStartDirectly();
     } else if (!ttsPaused) {
         window.speechSynthesis.pause();
         ttsPaused = true; updateTtsUI();
@@ -115,3 +1001,107 @@ function ttsToggle() {
         ttsPaused = false; updateTtsUI();
     }
 }
+
+function ttsStop(scrollTop = true) {
+    ttsPlaying = false; ttsPaused = false;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    clearHighlight(); updateTtsUI();
+    
+    document.getElementById('ttsStatusBar').style.display = 'none';
+    if (scrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function speakCurrent() {
+    if (!ttsPlaying || ttsIndex >= ttsVerses.length) { ttsFinish(); return; }
+    const { num, text } = ttsVerses[ttsIndex];
+    highlightVerse(ttsIndex);
+
+    const bar = document.getElementById('ttsStatusBar');
+    bar.style.display = 'block';
+    bar.className = '';
+    document.getElementById('ttsLabel').textContent = '🔊 正在朗讀';
+    document.getElementById('ttsCurrentVerse').textContent = `第 ${num} 節`;
+
+    const el = document.getElementById(`verse-${num}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    window.currentUtterance = new SpeechSynthesisUtterance(text);
+    window.currentUtterance.lang  = 'zh-HK';
+    window.currentUtterance.rate  = ttsRate;
+    if (ttsVoice) window.currentUtterance.voice = ttsVoice;
+
+    window.currentUtterance.onend = () => { 
+        if (!ttsPlaying) return; 
+        ttsIndex++; 
+        setTimeout(speakCurrent, 250); 
+    };
+    window.currentUtterance.onerror = (e) => { 
+        if (e.error === 'interrupted' || e.error === 'canceled') return; 
+        ttsFinish(); 
+    };
+
+    window.speechSynthesis.speak(window.currentUtterance);
+}
+
+function ttsFinish() {
+    ttsPlaying = false; ttsPaused = false;
+    clearHighlight(); updateTtsUI();
+    const bar = document.getElementById('ttsStatusBar');
+    bar.style.display = 'block';
+    bar.className = 'done';
+    document.getElementById('ttsLabel').textContent = '✅ 朗讀完畢';
+    document.getElementById('ttsCurrentVerse').textContent = '願神的話語祝福你 🙏';
+    setTimeout(() => {
+        if (!ttsPlaying && bar.className === 'done') bar.style.display = 'none';
+    }, 4000);
+}
+
+function highlightVerse(idx) {
+    clearHighlight();
+    const el = document.getElementById(`verse-${ttsVerses[idx]?.num}`);
+    if (el) el.classList.add('reading');
+}
+
+function clearHighlight() {
+    document.querySelectorAll('.verse-block.reading').forEach(el => el.classList.remove('reading'));
+}
+
+function updateTtsUI() {
+    const btn = document.getElementById('ttsPlayBtn');
+    const statusBar = document.getElementById('ttsStatusBar');
+    const isReady = statusBar.style.display === 'block' && document.getElementById('ttsLabel').textContent.includes('預備');
+
+    if (isReady) {
+        btn.innerHTML = '▶ 立即播放';
+        btn.className = 'big-btn btn-green';
+        btn.setAttribute('aria-label', '跳過倒數，立刻開始朗讀');
+    } else if (!ttsPlaying) {
+        btn.innerHTML = '▶ 開始朗讀';
+        btn.className = 'big-btn btn-green';
+        btn.setAttribute('aria-label', '開始廣東話朗讀');
+    } else if (ttsPaused) {
+        btn.innerHTML = '▶ 繼續朗讀';
+        btn.className = 'big-btn btn-orange';
+        btn.setAttribute('aria-label', '繼續朗讀');
+    } else {
+        btn.innerHTML = '⏸ 暫停';
+        btn.className = 'big-btn btn-gold';
+        btn.setAttribute('aria-label', '暫停朗讀');
+    }
+}
+
+// ══════════════════════════════════════
+// 鍵盤快捷鍵
+// ══════════════════════════════════════
+function setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+        if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+        if (e.key === ' ')          { e.preventDefault(); if (ttsVerses.length) ttsToggle(); }
+        if (e.key === 'Escape')     { closeAllDropdowns(); ttsStop(); }
+        if (e.key === 'ArrowLeft')  { e.preventDefault(); prevChap(); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); nextChap(); }
+    });
+}
+</script>
+</body>
+</html>
