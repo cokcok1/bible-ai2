@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
-    <title>聖經朗讀</title>
+    <title>聖經朗讀 — 視障版</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="bible-icon.png">
@@ -296,16 +296,13 @@
 </head>
 <body>
 
-<!-- Header -->
 <header class="site-header" role="banner">
     <h1>📖 聖經朗讀</h1>
     <a href="index.html" class="back-link" aria-label="返回標準版">標準版</a>
 </header>
 
-<!-- 遮罩 -->
 <div class="overlay" id="overlay" onclick="closeAllDropdowns()"></div>
 
-<!-- 自製書卷下拉 -->
 <div class="custom-dropdown" id="bookDropdown" role="dialog" aria-modal="true" aria-label="選擇書卷">
     <div class="dropdown-header">
         <span class="dropdown-title">📚 選擇書卷</span>
@@ -314,7 +311,6 @@
     <div class="dropdown-list" id="bookList" role="listbox" aria-label="書卷列表"></div>
 </div>
 
-<!-- 自製章數下拉 -->
 <div class="custom-dropdown" id="chapDropdown" role="dialog" aria-modal="true" aria-label="選擇章數">
     <div class="dropdown-header">
         <span class="dropdown-title" id="chapDropdownTitle">📖 選擇章數</span>
@@ -325,7 +321,6 @@
 
 <main class="main" role="main">
 
-    <!-- 載入進度 -->
     <section id="loadingSection" aria-live="polite">
         <p id="loadingText">正在下載聖經資料庫…</p>
         <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
@@ -335,7 +330,6 @@
 
     <div id="mainControls" style="display:none;">
 
-        <!-- ── 語音搜尋 ── -->
         <div class="voice-card" role="region" aria-label="語音搜尋章節">
             <span class="voice-label">🎙️ 語音搜尋章節</span>
             <button class="big-btn btn-purple" id="voiceBtn"
@@ -349,7 +343,6 @@
             </p>
         </div>
 
-        <!-- ── 步驟一：選書卷 ── -->
         <div class="card" id="bookCard">
             <span class="step-label" id="step1label">第一步：選書卷</span>
             <div class="custom-select-wrap">
@@ -363,7 +356,6 @@
             </div>
         </div>
 
-        <!-- ── 步驟二：選章數 ── -->
         <div class="card" id="chapCard">
             <span class="step-label">第二步：選章數</span>
             <div class="custom-select-wrap">
@@ -378,7 +370,6 @@
             </div>
         </div>
 
-        <!-- ── 語速 ── -->
         <div class="card">
             <span class="step-label">朗讀語速</span>
             <div class="speed-row" role="group" aria-label="選擇朗讀語速">
@@ -390,21 +381,16 @@
             </div>
         </div>
 
-        <!-- ── 上下章 ── -->
         <div class="two-col" id="navRow" style="display:none;">
             <button class="big-btn btn-outline" onclick="prevChap()" aria-label="上一章">❮ 上一章</button>
             <button class="big-btn btn-outline" onclick="nextChap()" aria-label="下一章">下一章 ❯</button>
         </div>
 
-    </div><!-- /mainControls -->
-
-    <!-- ── 朗讀狀態 ── -->
-    <div id="ttsStatusBar" role="status" aria-live="polite" aria-atomic="true">
+    </div><div id="ttsStatusBar" role="status" aria-live="polite" aria-atomic="true">
         <div class="tts-status-label" id="ttsLabel">🔊 正在朗讀</div>
         <div id="ttsCurrentVerse"></div>
     </div>
 
-    <!-- ── 朗讀控制 ── -->
     <div id="ttsControls" style="display:none; margin-bottom:20px;">
         <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px;">
             <button class="big-btn btn-green" id="ttsPlayBtn"
@@ -417,20 +403,12 @@
         </div>
     </div>
 
-    <!-- ── 朗讀提示（揀完章節後出現）── -->
     <div id="readPromptBar" style="display:none; margin-bottom:20px;">
         <button id="readPromptBtn" class="big-btn btn-green"
-            style="font-size:2rem; min-height:110px; border-radius:20px; box-shadow: 0 8px 28px rgba(27,122,62,0.45);"
-            onclick="ttsStartNow()"
-            aria-label="點此立即開始廣東話朗讀">
+            style="font-size:2rem; min-height:110px; border-radius:20px; box-shadow: 0 8px 28px rgba(27,122,62,0.45); animation: pulse-green 1.5s ease-in-out infinite;"
+            onclick="ttsStart()"
+            aria-label="點此開始廣東話朗讀">
             🔊 點此開始朗讀
-        </button>
-        <div id="countdownText" style="text-align:center; margin-top:12px; font-size:1.3rem; color:#1b7a3e; font-weight:bold;" aria-live="polite"></div>
-        <button id="cancelAutoBtn" class="big-btn btn-outline"
-            style="margin-top:10px; min-height:60px; font-size:1.1rem;"
-            onclick="cancelAutoPlay()"
-            aria-label="取消自動朗讀">
-            ✕ 取消自動朗讀
         </button>
     </div>
     <section id="scriptureSection" aria-label="經文內容">
@@ -440,6 +418,7 @@
 
 </main>
 
+<div id="a11yAnnouncer" class="sr-only" aria-live="polite"></div>
 <div class="sr-only" aria-label="鍵盤快捷鍵：空白鍵 暫停或繼續，Escape 停止，左箭頭 上一章，右箭頭 下一章"></div>
 
 <script>
@@ -461,7 +440,6 @@ let ttsRate    = 1.0;
 let ttsVoice   = null;
 
 // 書卷名稱對照表（語音辨識用）
-// 支援廣東話唸法、普通話、數字章節
 const BOOK_ALIASES = {
     '創世記':['創世記','創世','Genesis'],
     '出埃及記':['出埃及記','出埃及','Exodus'],
@@ -665,7 +643,11 @@ function openDropdown(type) {
     document.getElementById('overlay').classList.add('open');
     document.getElementById(trigger).classList.add('open');
     document.getElementById(trigger).setAttribute('aria-expanded', 'true');
-    // 聚焦第一個項目
+    
+    // A11y 優化：當開啟彈出視窗時，隱藏背景內容，避免螢幕閱讀器混淆焦點
+    document.querySelector('.site-header').setAttribute('aria-hidden', 'true');
+    document.querySelector('.main').setAttribute('aria-hidden', 'true');
+
     setTimeout(() => {
         const first = document.querySelector(`#${dropId === 'bookDropdown' ? 'bookList' : 'chapList'} .dropdown-item`);
         if (first) first.focus();
@@ -681,21 +663,22 @@ function closeAllDropdowns() {
     document.getElementById('chapTrigger').classList.remove('open');
     document.getElementById('bookTrigger').setAttribute('aria-expanded','false');
     document.getElementById('chapTrigger').setAttribute('aria-expanded','false');
+
+    // A11y 優化：關閉彈出視窗時，還原背景內容的可讀性
+    document.querySelector('.site-header').removeAttribute('aria-hidden');
+    document.querySelector('.main').removeAttribute('aria-hidden');
 }
 
 function selectBook(book) {
     selectedBook = book;
-    // 更新觸發器
     const trigger = document.getElementById('bookTrigger');
     trigger.classList.remove('placeholder');
     document.getElementById('bookTriggerText').textContent = book;
     trigger.setAttribute('aria-label', `書卷：${book}，點擊更改`);
-    // 標記 selected
     document.querySelectorAll('#bookList .dropdown-item').forEach(el => {
         el.classList.toggle('selected', el.dataset.value === book);
         el.setAttribute('aria-selected', el.dataset.value === book ? 'true' : 'false');
     });
-    // 準備章數下拉
     populateChapDropdown(book);
     const chapTrigger = document.getElementById('chapTrigger');
     chapTrigger.disabled = false;
@@ -704,7 +687,6 @@ function selectBook(book) {
     chapTrigger.setAttribute('aria-label', `選擇 ${book} 章數`);
     closeAllDropdowns();
     ttsStop(false);
-    // 自動打開章數下拉
     setTimeout(() => openDropdown('chap'), 250);
 }
 
@@ -721,18 +703,13 @@ function selectChap(chap) {
     });
     closeAllDropdowns();
 
-    // 停止現有 TTS
     ttsPlaying = false;
     ttsPaused  = false;
-    window.speechSynthesis.cancel();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     clearHighlight();
     updateTtsUI();
 
-    // 渲染經文
     renderScripture(selectedBook, selectedChap);
-
-    // iOS Safari 要求 TTS 必須直接由用戶手勢觸發
-    // 顯示大型「立即朗讀」提示按鈕，用戶點一下即開始
     showReadPrompt();
 }
 
@@ -742,7 +719,7 @@ function selectChap(chap) {
 function startVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-        alert('你的裝置不支援語音輸入，請使用 iPhone Safari。');
+        alert('你的裝置不支援語音輸入，請使用 iPhone Safari 或 Chrome。');
         return;
     }
 
@@ -783,41 +760,37 @@ function startVoice() {
 function parseVoiceInput(text) {
     const resultBox = document.getElementById('voiceResultBox');
 
-    // 1. 比對書卷
-    // 關鍵：將所有 alias 攤平並按長度由長到短排序
-    // 確保「約翰一書」先於「約翰」匹配，避免短名稱搶先
-    let matchedBook = null;
+    // Bug 修正 1：扁平化別名清單，並「由長到短」排序，防止「約翰一書」被「約翰」提前截斷
     const allAliases = [];
     for (const [canonical, aliases] of Object.entries(BOOK_ALIASES)) {
         if (!bibleData[canonical]) continue;
-        for (const alias of aliases) {
+        aliases.forEach(alias => {
             allAliases.push({ canonical, alias });
-        }
+        });
     }
-    // 亦加入 bookOrder 本身（正式書卷名）
-    for (const b of bookOrder) {
-        allAliases.push({ canonical: b, alias: b });
-    }
-    // 由長到短排序，長嘅優先匹配
     allAliases.sort((a, b) => b.alias.length - a.alias.length);
 
-    for (const { canonical, alias } of allAliases) {
-        if (text.includes(alias)) {
-            matchedBook = canonical;
-            break;
+    // 1. 比對書卷
+    let matchedBook = null;
+    for (const item of allAliases) {
+        if (text.includes(item.alias)) {
+            matchedBook = item.canonical;
+            break; 
+        }
+    }
+    if (!matchedBook) {
+        for (const b of bookOrder) {
+            if (text.includes(b)) { matchedBook = b; break; }
         }
     }
 
     // 2. 比對章數
     let matchedChap = null;
-
-    // 先試中文數字（由長到短避免 "十一" 先被 "一" 截走）
     const zhKeys = Object.keys(ZH_NUMS).sort((a,b) => b.length - a.length);
     for (const zh of zhKeys) {
         const re = new RegExp(zh + '[章篇]');
         if (re.test(text)) { matchedChap = ZH_NUMS[zh]; break; }
     }
-    // 再試阿拉伯數字
     if (!matchedChap) {
         const m = text.match(/(\d+)\s*[章篇]/);
         if (m) matchedChap = parseInt(m[1]);
@@ -837,13 +810,10 @@ function parseVoiceInput(text) {
         resultBox.textContent += `\n✅ 跳去 ${matchedBook} 第 ${matchedChap} 章`;
         selectBook(matchedBook);
         setTimeout(() => selectChap(matchedChap), 300);
-
     } else if (matchedBook) {
         resultBox.textContent += `\n✅ 已選 ${matchedBook}，請再說章數`;
         selectBook(matchedBook);
-
     } else {
-        // 只有章數，搵當前書卷
         if (selectedBook && bibleData[selectedBook]?.[matchedChap]) {
             resultBox.textContent += `\n✅ 跳去 ${selectedBook} 第 ${matchedChap} 章`;
             selectChap(matchedChap);
@@ -920,7 +890,7 @@ function renderScripture(book, chap) {
     });
 
     document.getElementById('scriptureSection').style.display = 'block';
-    document.getElementById('ttsControls').style.display = 'none'; // 等用戶點「點此開始朗讀」先顯示
+    document.getElementById('ttsControls').style.display = 'none'; 
     document.getElementById('navRow').style.display = 'grid';
 }
 
@@ -935,75 +905,34 @@ function setSpeed(btn) {
     btn.classList.add('sel');
     btn.setAttribute('aria-pressed', 'true');
     ttsRate = parseFloat(btn.dataset.rate);
+
+    // A11y 優化：當設定語速後，在語音通道提供即時人聲/旁白反饋
+    const speedText = btn.textContent;
+    document.getElementById('a11yAnnouncer').textContent = `語速已設定為${speedText}`;
+
     if (ttsPlaying && !ttsPaused) {
-        window.speechSynthesis.cancel();
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
         setTimeout(speakCurrent, 100);
     }
 }
 
 // ══════════════════════════════════════
-// TTS
+// TTS 語音朗讀核心
 // ══════════════════════════════════════
-
-// iOS Safari 要求 TTS 必須直接由用戶手勢觸發
-// 揀完章節後顯示大型「立即朗讀」提示，用戶點一下即開始
-let autoPlayTimer  = null; // setInterval handle
-let autoPlayCount  = 3;   // 倒數秒數
-
 function showReadPrompt() {
     const bar = document.getElementById('readPromptBar');
     bar.style.display = 'block';
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // 清除舊計時器
-    cancelAutoPlay(false);
-
-    // 倒數顯示
-    autoPlayCount = 3;
-    const countEl = document.getElementById('countdownText');
-    countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
-
-    autoPlayTimer = setInterval(() => {
-        autoPlayCount--;
-        if (autoPlayCount <= 0) {
-            clearInterval(autoPlayTimer);
-            autoPlayTimer = null;
-            countEl.textContent = '';
-            ttsStartNow(); // 倒數完自動開始
-        } else {
-            countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
-        }
-    }, 1000);
-
     setTimeout(() => document.getElementById('readPromptBtn').focus(), 350);
 }
 
 function hideReadPrompt() {
-    cancelAutoPlay(false);
     document.getElementById('readPromptBar').style.display = 'none';
-    document.getElementById('countdownText').textContent = '';
-}
-
-function cancelAutoPlay(hideBar = true) {
-    if (autoPlayTimer) {
-        clearInterval(autoPlayTimer);
-        autoPlayTimer = null;
-    }
-    document.getElementById('countdownText').textContent = '';
-    if (hideBar) {
-        document.getElementById('readPromptBar').style.display = 'none';
-    }
-}
-
-// 用戶點按鈕或倒數完成都用呢個
-function ttsStartNow() {
-    cancelAutoPlay(false);
-    ttsStart();
 }
 
 function ttsToggle() {
     if (!('speechSynthesis' in window)) {
-        alert('你的裝置不支援語音朗讀，請使用 iPhone Safari。');
+        alert('你的裝置不支援語音朗讀。');
         return;
     }
     if (!ttsVerses.length) return;
@@ -1023,7 +952,7 @@ function ttsToggle() {
 function ttsStart() {
     if (!('speechSynthesis' in window) || !ttsVerses.length) return;
     hideReadPrompt();
-    document.getElementById('ttsControls').style.display = 'block'; // 點咗先顯示控制欄
+    document.getElementById('ttsControls').style.display = 'block'; 
     window.speechSynthesis.cancel();
     ttsIndex = 0; ttsPlaying = true; ttsPaused = false;
     updateTtsUI(); speakCurrent();
@@ -1035,7 +964,6 @@ function ttsStop(scrollTop = true) {
     clearHighlight(); updateTtsUI();
     const bar = document.getElementById('ttsStatusBar');
     bar.style.display = 'none';
-    // 停止後隱藏控制欄，重新顯示「點此開始朗讀」（若有經文）
     if (ttsVerses.length) {
         document.getElementById('ttsControls').style.display = 'none';
         showReadPrompt();
@@ -1057,15 +985,23 @@ function speakCurrent() {
     const el = document.getElementById(`verse-${num}`);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang  = 'zh-HK';
-    utt.rate  = ttsRate;
-    if (ttsVoice) utt.voice = ttsVoice;
+    // Bug 修正 2：將 Utterance 物件掛載至 window，防止長篇幅朗讀時被垃圾回收機制(GC)強制切斷
+    window.currentUtterance = new SpeechSynthesisUtterance(text);
+    window.currentUtterance.lang  = 'zh-HK';
+    window.currentUtterance.rate  = ttsRate;
+    if (ttsVoice) window.currentUtterance.voice = ttsVoice;
 
-    utt.onend   = () => { if (!ttsPlaying) return; ttsIndex++; setTimeout(speakCurrent, 250); };
-    utt.onerror = (e) => { if (e.error === 'interrupted' || e.error === 'canceled') return; ttsFinish(); };
+    window.currentUtterance.onend = () => { 
+        if (!ttsPlaying) return; 
+        ttsIndex++; 
+        setTimeout(speakCurrent, 250); 
+    };
+    window.currentUtterance.onerror = (e) => { 
+        if (e.error === 'interrupted' || e.error === 'canceled') return; 
+        ttsFinish(); 
+    };
 
-    window.speechSynthesis.speak(utt);
+    window.speechSynthesis.speak(window.currentUtterance);
 }
 
 function ttsFinish() {
@@ -1079,7 +1015,7 @@ function ttsFinish() {
     setTimeout(() => {
         bar.style.display = 'none';
         document.getElementById('ttsControls').style.display = 'none';
-        showReadPrompt(); // 完畢後重新顯示大按鈕
+        showReadPrompt(); 
     }, 4000);
 }
 
@@ -1111,7 +1047,7 @@ function updateTtsUI() {
 }
 
 // ══════════════════════════════════════
-// 鍵盤
+// 鍵盤快捷鍵
 // ══════════════════════════════════════
 function setupKeyboard() {
     document.addEventListener('keydown', (e) => {
