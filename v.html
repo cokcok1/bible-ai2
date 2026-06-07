@@ -777,18 +777,27 @@ function parseVoiceInput(text) {
     const resultBox = document.getElementById('voiceResultBox');
 
     // 1. 比對書卷
+    // 關鍵：將所有 alias 攤平並按長度由長到短排序
+    // 確保「約翰一書」先於「約翰」匹配，避免短名稱搶先
     let matchedBook = null;
+    const allAliases = [];
     for (const [canonical, aliases] of Object.entries(BOOK_ALIASES)) {
         if (!bibleData[canonical]) continue;
         for (const alias of aliases) {
-            if (text.includes(alias)) { matchedBook = canonical; break; }
+            allAliases.push({ canonical, alias });
         }
-        if (matchedBook) break;
     }
-    // fallback：直接比對 bookOrder
-    if (!matchedBook) {
-        for (const b of bookOrder) {
-            if (text.includes(b)) { matchedBook = b; break; }
+    // 亦加入 bookOrder 本身（正式書卷名）
+    for (const b of bookOrder) {
+        allAliases.push({ canonical: b, alias: b });
+    }
+    // 由長到短排序，長嘅優先匹配
+    allAliases.sort((a, b) => b.alias.length - a.alias.length);
+
+    for (const { canonical, alias } of allAliases) {
+        if (text.includes(alias)) {
+            matchedBook = canonical;
+            break;
         }
     }
 
