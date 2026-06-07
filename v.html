@@ -676,6 +676,14 @@ function selectBook(book) {
 
 function selectChap(chap) {
     selectedChap = chap;
+
+    // ✨【核心修正】在用戶點擊的瞬間，立刻同步向瀏覽器發出一個空語音
+    // 藉此在第一時間「騙過」瀏覽器，幫全頁安全解鎖語音功能，令 3 秒後的自動朗讀唔會被 Block
+    if ('speechSynthesis' in window) {
+        const unlockUtterance = new SpeechSynthesisUtterance(' '); // 發出一個空格音
+        window.speechSynthesis.speak(unlockUtterance);
+    }
+
     const trigger = document.getElementById('chapTrigger');
     trigger.classList.remove('placeholder');
     document.getElementById('chapTriggerText').textContent = `第 ${chap} 章`;
@@ -691,6 +699,7 @@ function selectChap(chap) {
     renderScripture(selectedBook, selectedChap);
     initAutoPlay(); 
 }
+
 
 // ══════════════════════════════════════
 // 語音搜尋
