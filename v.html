@@ -904,7 +904,7 @@ function renderScripture(book, chap) {
     });
 
     document.getElementById('scriptureSection').style.display = 'block';
-    document.getElementById('ttsControls').style.display = 'block';
+    document.getElementById('ttsControls').style.display = 'none'; // 等用戶點「點此開始朗讀」先顯示
     document.getElementById('navRow').style.display = 'grid';
 }
 
@@ -964,6 +964,7 @@ function ttsToggle() {
 function ttsStart() {
     if (!('speechSynthesis' in window) || !ttsVerses.length) return;
     hideReadPrompt();
+    document.getElementById('ttsControls').style.display = 'block'; // 點咗先顯示控制欄
     window.speechSynthesis.cancel();
     ttsIndex = 0; ttsPlaying = true; ttsPaused = false;
     updateTtsUI(); speakCurrent();
@@ -973,9 +974,13 @@ function ttsStop(scrollTop = true) {
     ttsPlaying = false; ttsPaused = false;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     clearHighlight(); updateTtsUI();
-    hideReadPrompt();
     const bar = document.getElementById('ttsStatusBar');
     bar.style.display = 'none';
+    // 停止後隱藏控制欄，重新顯示「點此開始朗讀」（若有經文）
+    if (ttsVerses.length) {
+        document.getElementById('ttsControls').style.display = 'none';
+        showReadPrompt();
+    }
     if (scrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1012,7 +1017,11 @@ function ttsFinish() {
     bar.className = 'done';
     document.getElementById('ttsLabel').textContent = '✅ 朗讀完畢';
     document.getElementById('ttsCurrentVerse').textContent = '願神的話語祝福你 🙏';
-    setTimeout(() => { bar.style.display = 'none'; }, 5000);
+    setTimeout(() => {
+        bar.style.display = 'none';
+        document.getElementById('ttsControls').style.display = 'none';
+        showReadPrompt(); // 完畢後重新顯示大按鈕
+    }, 4000);
 }
 
 function highlightVerse(idx) {
