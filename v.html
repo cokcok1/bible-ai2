@@ -459,6 +459,8 @@ let ttsPlaying = false;
 let ttsPaused  = false;
 let ttsRate    = 1.0;
 let ttsVoice   = null;
+let ttsUnlocked = false;   // iOS TTS 解鎖狀態
+let autoPlayTimer = null;  // 3秒自動播放計時器
 
 // 書卷名稱對照表（語音辨識用）
 // 支援廣東話唸法、普通話、數字章節
@@ -658,6 +660,7 @@ function populateChapDropdown(book) {
 }
 
 function openDropdown(type) {
+    unlockTTS(); // 用戶第一次點選時解鎖 TTS
     if (type === 'chap' && !selectedBook) return;
     const dropId  = type === 'book' ? 'bookDropdown' : 'chapDropdown';
     const trigger = type === 'book' ? 'bookTrigger'  : 'chapTrigger';
@@ -721,7 +724,7 @@ function selectChap(chap) {
     });
     closeAllDropdowns();
 
-    // 停止現有 TTS
+    // 停止現有 TTS 同計時器
     ttsPlaying = false;
     ttsPaused  = false;
     window.speechSynthesis.cancel();
@@ -731,8 +734,7 @@ function selectChap(chap) {
     // 渲染經文
     renderScripture(selectedBook, selectedChap);
 
-    // iOS Safari 要求 TTS 必須直接由用戶手勢觸發
-    // 顯示大型「立即朗讀」提示按鈕，用戶點一下即開始
+    // 已解鎖則 3 秒倒數自動朗讀，未解鎖則顯示按鈕等用戶點
     showReadPrompt();
 }
 
@@ -945,31 +947,46 @@ function setSpeed(btn) {
 // TTS
 // ══════════════════════════════════════
 
+// 喺用戶第一次手勢時播放無聲 utterance，解鎖 iOS TTS
+function unlockTTS() {
+    if (ttsUnlocked || !('speechSynthesis' in window)) return;
+    const silent = new SpeechSynthesisUtterance(' ');
+    silent.volume = 0;
+    silent.lang   = 'zh-HK';
+    if (ttsVoice) silent.voice = ttsVoice;
+    window.speechSynthesis.speak(silent);
+    ttsUnlocked = true;
+}
+
 // iOS Safari 要求 TTS 必須直接由用戶手勢觸發
-// 揀完章節後顯示大型「立即朗讀」提示，用戶點一下即開始
-let autoPlayTimer  = null; // setInterval handle
-let autoPlayCount  = 3;   // 倒數秒數
+// 已解鎖：3秒倒數自動朗讀；未解鎖：顯示按鈕等用戶點
+let autoPlayTimer  = null;
+let autoPlayCount  = 3;
 
 function showReadPrompt() {
-    const bar = document.getElementById('readPromptBar');
+    const bar     = document.getElementById('readPromptBar');
+    const countEl = document.getElementById('countdownText');
     bar.style.display = 'block';
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // 清除舊計時器
     cancelAutoPlay(false);
 
-    // 倒數顯示
-    autoPlayCount = 3;
-    const countEl = document.getElementById('countdownText');
-    countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
+    if (!ttsUnlocked) {
+        // 未解鎖：等用戶點按鈕
+        countEl.textContent = '點此開始朗讀';
+        setTimeout(() => document.getElementById('readPromptBtn').focus(), 350);
+        return;
+    }
 
+    // 已解鎖：3秒倒數後自動開始
+    autoPlayCount = 3;
+    countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
     autoPlayTimer = setInterval(() => {
         autoPlayCount--;
         if (autoPlayCount <= 0) {
             clearInterval(autoPlayTimer);
             autoPlayTimer = null;
             countEl.textContent = '';
-            ttsStartNow(); // 倒數完自動開始
+            ttsStartNow();
         } else {
             countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
         }
