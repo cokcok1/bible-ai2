@@ -575,25 +575,19 @@ function initVoice() {
 // 載入聖經
 // ══════════════════════════════════════
 async function loadBible() {
-    const loadingText = document.getElementById('loadingText');
+    const loadingText  = document.getElementById('loadingText');
     const progressFill = document.getElementById('progressFill');
-    const progressBar = document.getElementById('progressBar');
+    const progressBar  = document.getElementById('progressBar');
 
     for (const url of BIBLE_URLS) {
         try {
             loadingText.textContent = '正在下載聖經資料庫…';
             progressFill.style.width = '0%';
 
-            // 設定 15 秒逾時
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
-
-            const res = await fetch(url, { signal: controller.signal });
-            clearTimeout(timeout);
-
+            const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            const total = +res.headers.get('Content-Length');
+            const total  = +res.headers.get('Content-Length');
             const reader = res.body.getReader();
             let recv = 0, chunks = [];
 
@@ -615,12 +609,13 @@ async function loadBible() {
             document.getElementById('mainControls').style.display = 'block';
             populateBookDropdown();
             return; // 成功
+
         } catch (e) {
-            // 試下一個 URL
+            loadingText.textContent = `嘗試備用來源…`;
         }
     }
 
-    // 全部失敗
+    // 全部失敗才顯示錯誤
     loadingText.innerHTML = '載入失敗，請檢查網絡後重試。<br><br>' +
         '<button onclick="location.reload()" style="' +
         'margin-top:10px; padding:16px 32px; font-size:1.2rem; font-weight:bold;' +
