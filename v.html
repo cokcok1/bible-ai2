@@ -446,7 +446,10 @@
 // ══════════════════════════════════════
 // 設定
 // ══════════════════════════════════════
-const BIBLE_URL = 'https://cokcok1.github.io/bible-ai2/chinese_union_trad_trad.txt';
+const BIBLE_URLS = [
+    'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt',
+    'https://cokcok1.github.io/bible-ai2/chinese_union_trad_trad.txt',
+];
 
 let bibleData  = {};
 let bookOrder  = [];
@@ -459,7 +462,6 @@ let ttsPlaying = false;
 let ttsPaused  = false;
 let ttsRate    = 1.0;
 let ttsVoice   = null;
-let ttsUnlocked = false;   // iOS TTS 解鎖狀態
 let autoPlayTimer = null;  // 3秒自動播放計時器
 
 // 書卷名稱對照表（語音辨識用）
@@ -573,31 +575,57 @@ function initVoice() {
 // 載入聖經
 // ══════════════════════════════════════
 async function loadBible() {
-    try {
-        const res = await fetch(BIBLE_URL);
-        if (!res.ok) throw new Error('網絡錯誤');
-        const reader = res.body.getReader();
-        const total  = +res.headers.get('Content-Length');
-        let recv = 0, chunks = [];
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            recv += value.length;
-            if (total) {
-                const pct = Math.round(recv / total * 100);
-                document.getElementById('progressFill').style.width = pct + '%';
-                document.getElementById('progressBar').setAttribute('aria-valuenow', pct);
+    const loadingText = document.getElementById('loadingText');
+    const progressFill = document.getElementById('progressFill');
+    const progressBar = document.getElementById('progressBar');
+
+    for (const url of BIBLE_URLS) {
+        try {
+            loadingText.textContent = '正在下載聖經資料庫…';
+            progressFill.style.width = '0%';
+
+            // 設定 15 秒逾時
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
+
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeout);
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const total = +res.headers.get('Content-Length');
+            const reader = res.body.getReader();
+            let recv = 0, chunks = [];
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+                recv += value.length;
+                if (total) {
+                    const pct = Math.round(recv / total * 100);
+                    progressFill.style.width = pct + '%';
+                    progressBar.setAttribute('aria-valuenow', pct);
+                }
             }
+
+            loadingText.textContent = '解析中…';
+            parseBible(new TextDecoder('utf-8').decode(concatArrays(chunks)));
+            document.getElementById('loadingSection').style.display = 'none';
+            document.getElementById('mainControls').style.display = 'block';
+            populateBookDropdown();
+            return; // 成功
+        } catch (e) {
+            // 試下一個 URL
         }
-        document.getElementById('loadingText').textContent = '解析中…';
-        parseBible(new TextDecoder('utf-8').decode(concatArrays(chunks)));
-        document.getElementById('loadingSection').style.display = 'none';
-        document.getElementById('mainControls').style.display = 'block';
-        populateBookDropdown();
-    } catch (e) {
-        document.getElementById('loadingText').textContent = '載入失敗：' + e.message;
     }
+
+    // 全部失敗
+    loadingText.innerHTML = '載入失敗，請檢查網絡後重試。<br><br>' +
+        '<button onclick="location.reload()" style="' +
+        'margin-top:10px; padding:16px 32px; font-size:1.2rem; font-weight:bold;' +
+        'background:#1565c0; color:#fff; border:none; border-radius:12px; cursor:pointer;">' +
+        '🔄 重新載入</button>';
 }
 
 function concatArrays(arrays) {
@@ -660,7 +688,6 @@ function populateChapDropdown(book) {
 }
 
 function openDropdown(type) {
-    unlockTTS(); // 用戶第一次點選時解鎖 TTS
     if (type === 'chap' && !selectedBook) return;
     const dropId  = type === 'book' ? 'bookDropdown' : 'chapDropdown';
     const trigger = type === 'book' ? 'bookTrigger'  : 'chapTrigger';
@@ -947,21 +974,9 @@ function setSpeed(btn) {
 // TTS
 // ══════════════════════════════════════
 
-// 喺用戶第一次手勢時播放無聲 utterance，解鎖 iOS TTS
-function unlockTTS() {
-    if (ttsUnlocked || !('speechSynthesis' in window)) return;
-    const silent = new SpeechSynthesisUtterance(' ');
-    silent.volume = 0;
-    silent.lang   = 'zh-HK';
-    if (ttsVoice) silent.voice = ttsVoice;
-    window.speechSynthesis.speak(silent);
-    ttsUnlocked = true;
-}
-
-// iOS Safari 要求 TTS 必須直接由用戶手勢觸發
-// 已解鎖：3秒倒數自動朗讀；未解鎖：顯示按鈕等用戶點
-let autoPlayTimer  = null;
-let autoPlayCount  = 3;
+// 揀完章節後永遠 3 秒倒數，自動開始朗讀
+let autoPlayTimer = null;
+let autoPlayCount = 3;
 
 function showReadPrompt() {
     const bar     = document.getElementById('readPromptBar');
@@ -970,14 +985,6 @@ function showReadPrompt() {
     bar.scrollIntoView({ behavior: 'smooth', block: 'center' });
     cancelAutoPlay(false);
 
-    if (!ttsUnlocked) {
-        // 未解鎖：等用戶點按鈕
-        countEl.textContent = '點此開始朗讀';
-        setTimeout(() => document.getElementById('readPromptBtn').focus(), 350);
-        return;
-    }
-
-    // 已解鎖：3秒倒數後自動開始
     autoPlayCount = 3;
     countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
     autoPlayTimer = setInterval(() => {
@@ -991,8 +998,6 @@ function showReadPrompt() {
             countEl.textContent = `${autoPlayCount} 秒後自動開始朗讀…`;
         }
     }, 1000);
-
-    setTimeout(() => document.getElementById('readPromptBtn').focus(), 350);
 }
 
 function hideReadPrompt() {
@@ -1086,6 +1091,35 @@ function speakCurrent() {
 }
 
 function ttsFinish() {
+    // 讀完一章，自動讀下一章
+    if (ttsPlaying) {
+        const nextChapNum = selectedChap + 1;
+        if (bibleData[selectedBook]?.[nextChapNum]) {
+            // 同一卷有下一章
+            selectedChap = nextChapNum;
+            updateChapTrigger(selectedBook, nextChapNum);
+            renderScripture(selectedBook, nextChapNum);
+            ttsIndex = 0;
+            speakCurrent();
+            return;
+        } else {
+            // 跳去下一卷第一章
+            const bookIdx = bookOrder.indexOf(selectedBook);
+            if (bookIdx < bookOrder.length - 1) {
+                const nextBook = bookOrder[bookIdx + 1];
+                selectedBook = nextBook;
+                selectedChap = 1;
+                updateBookTrigger(nextBook);
+                updateChapTrigger(nextBook, 1);
+                populateChapDropdown(nextBook);
+                renderScripture(nextBook, 1);
+                ttsIndex = 0;
+                speakCurrent();
+                return;
+            }
+        }
+    }
+    // 讀完整本聖經或已停止
     ttsPlaying = false; ttsPaused = false;
     clearHighlight(); updateTtsUI();
     const bar = document.getElementById('ttsStatusBar');
@@ -1096,8 +1130,28 @@ function ttsFinish() {
     setTimeout(() => {
         bar.style.display = 'none';
         document.getElementById('ttsControls').style.display = 'none';
-        showReadPrompt(); // 完畢後重新顯示大按鈕
+        showReadPrompt();
     }, 4000);
+}
+
+// 更新書卷觸發器顯示
+function updateBookTrigger(book) {
+    const trigger = document.getElementById('bookTrigger');
+    trigger.classList.remove('placeholder');
+    document.getElementById('bookTriggerText').textContent = book;
+    trigger.setAttribute('aria-label', `書卷：${book}，點擊更改`);
+    document.querySelectorAll('#bookList .dropdown-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === book);
+        el.setAttribute('aria-selected', el.dataset.value === book ? 'true' : 'false');
+    });
+}
+
+// 更新章數觸發器顯示
+function updateChapTrigger(book, chap) {
+    const trigger = document.getElementById('chapTrigger');
+    trigger.classList.remove('placeholder');
+    document.getElementById('chapTriggerText').textContent = `第 ${chap} 章`;
+    trigger.setAttribute('aria-label', `章數：第 ${chap} 章，點擊更改`);
 }
 
 function highlightVerse(idx) {
