@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聖經研讀 / Bible Study (V32)</title>
+    <title>聖經研讀 / Bible Study (V33)</title>
 
     <link rel="apple-touch-icon" sizes="180x180" href="bible-icon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="bible-icon.png">
@@ -178,7 +178,7 @@
         .nav-row { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 5px; }
         
         /* 統一按鈕高度 */
-        .read-btn, .nav-btn, .ai-btn, .grok-btn, .copy-btn, .context-btn {
+        .read-btn, .nav-btn, .ai-btn, .tts-btn, .copy-btn, .context-btn {
             height: var(--element-height); box-sizing: border-box;
             display: flex; align-items: center; justify-content: center;
         }
@@ -221,7 +221,7 @@
         .glass-btn:active { transform: translateY(2px); }
 
         .ai-btn { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
-        .grok-btn { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); }
+        .tts-btn { background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%); }
         .copy-btn { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
 
         .ref-title {
@@ -335,7 +335,7 @@
         
         <div id="actionArea" class="action-area">
             <button class="glass-btn ai-btn" id="geminiBtn" onclick="callGeminiAPI()">✨ Gemini解經<br>(VPN/非香港用戶)</button>
-            <button class="glass-btn grok-btn" id="grokBtn" onclick="openGrok()">🚀 複製並前往Grok</button>
+            <button class="glass-btn tts-btn" id="ttsBtn" onclick="toggleReadAloud()">🗣️ 廣東話朗讀</button>
             <button class="glass-btn copy-btn" id="copyBtn" onclick="copyPrompt()">📋 僅複製指令</button>
         </div>
 
@@ -354,7 +354,7 @@
             <div id="geminiResult" class="gemini-content"></div>
         </div>
 
-        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-01-11 (V32)</div>
+        <div class="footer-note" id="footerVer">Powered by Google Gemini AI. 內容只供參考 2026-07-05 (V33)</div>
     </div>
 </div>
 
@@ -371,6 +371,9 @@
     let bibleData = {}; // Stores the currently loaded bible data
     let bookOrder = []; // Stores book order for current bible
     let currentFontSize = 1.25;
+    
+    // 語音合成全域變數
+    let synth = window.speechSynthesis;
 
     // --- Translations ---
     const i18n = {
@@ -381,7 +384,6 @@
             readBtn: "閱讀經文",
             wholeChapterBtn: "📖 閱讀整章 (顯示上下文)",
             geminiBtn: "✨ Gemini 解經",
-            grokBtn: "🚀 複製並前往 Grok",
             copyBtn: "📋 僅複製指令",
             geminiHeader: "🤖 Gemini 解讀, 內容只供參考",
             loadingMsg: "正在連線 Google Gemini 思考神學意涵...",
@@ -402,8 +404,7 @@
             alertSearch: "請輸入搜尋關鍵字",
             alertRead: "請先閱讀經文",
             copySuccess: "✅ 成功",
-            copyOriginal: "📋 僅複製指令",
-            copyGrokMsg: "✅ 指令已複製！\n即將打開 Grok，請在對話框按「貼上」(Ctrl+V) 即可。"
+            copyOriginal: "📋 僅複製指令"
         },
         en: {
             title: "📖 Bible Study",
@@ -412,7 +413,6 @@
             readBtn: "Read Scripture",
             wholeChapterBtn: "📖 Read Whole Chapter (Context)",
             geminiBtn: "✨ Gemini Explanation",
-            grokBtn: "🚀 Copy & Go to Grok",
             copyBtn: "📋 Copy Prompt Only",
             geminiHeader: "🤖 Explanation for reference only",
             loadingMsg: "Connecting to Gemini for insights...",
@@ -433,14 +433,13 @@
             alertSearch: "Please enter a keyword",
             alertRead: "Please select scripture first",
             copySuccess: "✅ Success",
-            copyOriginal: "📋 Copy Prompt Only",
-            copyGrokMsg: "✅ Copied!\n Opening Grok, please paste (Ctrl+V) in the chat."
+            copyOriginal: "📋 Copy Prompt Only"
         }
     };
 
     // --- Initialization ---
-    // 日期固定 V32
-    const today = "2026-01-11";
+    // 日期固定 V33
+    const today = "2026-07-05";
     
     // Initial Load (Default Chinese)
     window.onload = function() {
@@ -452,6 +451,9 @@
     function switchLanguage(lang) {
         if (currentLang === lang) return;
         currentLang = lang;
+        
+        // 停止朗讀避免切換語言時出錯
+        if (synth.speaking) synth.cancel();
         
         // Update Buttons UI
         document.getElementById('btnZH').className = lang === 'zh' ? 'lang-btn active' : 'lang-btn';
@@ -480,13 +482,15 @@
         document.getElementById('searchInput').placeholder = t.searchPlaceholder;
         document.getElementById('readBtn').innerText = t.readBtn;
         document.getElementById('contextBtn').innerText = t.wholeChapterBtn;
-        document.getElementById('geminiBtn').innerText = t.geminiBtn;
-        document.getElementById('grokBtn').innerText = t.grokBtn;
+        
+        // 處理特殊按鈕文字
+        document.getElementById('ttsBtn').innerHTML = currentLang === 'zh' ? (synth.speaking ? '⏹️ 停止朗讀' : '🗣️ 廣東話朗讀') : (synth.speaking ? '⏹️ Stop' : '🗣️ Read Aloud');
+        
         document.getElementById('copyBtn').innerText = t.copyBtn;
         document.getElementById('geminiHeader').innerText = t.geminiHeader;
         document.getElementById('loadingMsg').innerText = t.loadingMsg;
-        // V32
-        document.getElementById('footerVer').innerText = `${t.footer} 2026-01-11 (V32)`;
+        // V33
+        document.getElementById('footerVer').innerText = `${t.footer} ${today} (V33)`;
         document.getElementById('loadingText').innerText = t.loadingText;
         document.getElementById('toLabel').innerText = t.to;
     }
@@ -523,7 +527,7 @@
             
             initSelectors();
             
-            // ★★★ V31/V32 功能：檢查網址參數並執行自動操作 ★★★
+            // ★★★ V31/V32/V33 功能：檢查網址參數並執行自動操作 ★★★
             checkUrlParams();
             
         } catch (e) {
@@ -774,6 +778,10 @@
         document.getElementById('geminiSection').style.display = 'none';
         document.getElementById('geminiResult').innerHTML = '';
         
+        // 如果正在朗讀，切換經文時自動停止
+        if (synth.speaking) synth.cancel();
+        document.getElementById('ttsBtn').innerHTML = currentLang === 'zh' ? '🗣️ 廣東話朗讀' : '🗣️ Read Aloud';
+        
         const book = bookSel.value;
         const chap = chapSel.value;
         const startVer = startVerSel.value;
@@ -816,6 +824,50 @@
         startVerSel.value = 'all';
         updateEndVerses();
         displayScripture();
+    }
+
+    // --- 語音朗讀功能 ---
+    function toggleReadAloud() {
+        const btn = document.getElementById('ttsBtn');
+        const textToRead = document.getElementById('displayText').innerText;
+        const t = i18n[currentLang];
+        
+        if (!textToRead) { 
+            alert(t.alertRead || "請先閱讀經文"); 
+            return; 
+        }
+
+        // 如果正在朗讀，則停止
+        if (synth.speaking) {
+            synth.cancel();
+            btn.innerHTML = currentLang === 'zh' ? '🗣️ 廣東話朗讀' : '🗣️ Read Aloud';
+            return;
+        }
+
+        // 清除經文前的數字標記 (例如 [1], [2])，讓朗讀更自然
+        const cleanText = textToRead.replace(/\[\d+\]/g, ' ');
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // 根據介面語言設定語音：繁體中文用廣東話 (zh-HK)，英文用英文 (en-US)
+        utterance.lang = currentLang === 'zh' ? 'zh-HK' : 'en-US';
+        
+        // 語速稍微放慢，適合長輩或細心聆聽 (1.0 係正常，0.85 係微慢)
+        utterance.rate = 0.85; 
+
+        // 當朗讀結束時，將按鈕恢復原狀
+        utterance.onend = function() {
+            btn.innerHTML = currentLang === 'zh' ? '🗣️ 廣東話朗讀' : '🗣️ Read Aloud';
+        };
+
+        // 朗讀出錯時的保護機制
+        utterance.onerror = function() {
+            synth.cancel();
+            btn.innerHTML = currentLang === 'zh' ? '🗣️ 廣東話朗讀' : '🗣️ Read Aloud';
+        };
+
+        synth.speak(utterance);
+        btn.innerHTML = currentLang === 'zh' ? '⏹️ 停止朗讀' : '⏹️ Stop';
     }
 
     function generateHiddenPrompt(ref) {
@@ -897,16 +949,6 @@ Please include the following:
         return html;
     }
 
-    function openGrok() {
-        const txt = document.getElementById('hiddenPrompt').value;
-        const t = i18n[currentLang];
-        if (!txt) { alert(t.alertRead); return; }
-        fallbackCopy(txt, () => {
-            alert(t.copyGrokMsg);
-            window.open('https://grok.com', '_blank');
-        });
-    }
-
     function copyPrompt() {
         const txt = document.getElementById('hiddenPrompt').value;
         const t = i18n[currentLang];
@@ -947,7 +989,7 @@ Please include the following:
         document.body.removeChild(textArea);
     }
 
-    // --- V31/V32 功能：讀取 URL 參數並自動執行 ---
+    // --- V31/V32/V33 功能：讀取 URL 參數並自動執行 ---
     function checkUrlParams() {
         const params = new URLSearchParams(window.location.search);
         const bookParam = params.get('book'); 
