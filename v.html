@@ -1,870 +1,266 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
-    <title>聖經朗讀 — 視障版</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="bible-icon.png">
-    <style>
-        :root {
-            --bg:#ffffff; --bg2:#f4f6fa; --border:#d0d7e3;
-            --text:#1a1a2e; --text2:#555577;
-            --blue:#1565c0; --blue-lt:#e8f0fe;
-            --green:#1b7a3e; --green-lt:#e6f4ea;
-            --orange:#c75000; --orange-lt:#fff0e6;
-            --red:#b71c1c; --red-lt:#fdeaea;
-            --purple:#6a1b9a; --purple-lt:#f3e5f5;
-            --gold:#f57f17; --gold-lt:#fff8e1;
-            --shadow:0 4px 18px rgba(0,0,0,0.10);
-            --shadow-sm:0 2px 8px rgba(0,0,0,0.08);
-            --radius:20px; --radius-sm:12px;
-            --btn-h:88px;
-            --font-xl:1.9rem; --font-lg:1.55rem; --font-md:1.25rem; --font-sm:1.05rem;
-        }
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-        body{background:var(--bg2);color:var(--text);font-family:"PingFang HK","Noto Sans TC","Heiti TC",sans-serif;font-size:var(--font-md);line-height:1.6;min-height:100vh;padding-bottom:80px;-webkit-text-size-adjust:100%;}
-
-        /* Header */
-        .site-header{background:var(--blue);padding:18px 20px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 3px 12px rgba(21,101,192,0.3);}
-        .site-header h1{font-size:var(--font-xl);color:#fff;font-weight:900;flex:1;}
-        .back-link{color:#fff;font-size:var(--font-sm);font-weight:bold;text-decoration:none;border:2.5px solid rgba(255,255,255,0.8);border-radius:10px;padding:8px 14px;white-space:nowrap;}
-        .back-link:focus{outline:4px solid #fff;}
-
-        .main{padding:24px 16px;max-width:680px;margin:0 auto;}
-
-        /* Loading */
-        #loadingSection{text-align:center;padding:50px 20px;}
-        #loadingText{font-size:var(--font-lg);color:var(--blue);font-weight:bold;margin-bottom:20px;}
-        .progress-bar{width:100%;height:18px;background:var(--border);border-radius:9px;overflow:hidden;}
-        .progress-fill{height:100%;background:var(--blue);width:0%;transition:width 0.3s;}
-
-        /* Cards */
-        .card{background:var(--bg);border-radius:var(--radius);padding:22px 18px;margin-bottom:20px;box-shadow:var(--shadow-sm);border:2px solid var(--border);}
-        .step-label{display:block;font-size:var(--font-sm);font-weight:900;color:var(--blue);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px;}
-
-        /* Buttons */
-        .big-btn{width:100%;min-height:var(--btn-h);font-size:var(--font-lg);font-weight:900;border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 16px;transition:transform 0.1s,box-shadow 0.15s;line-height:1.2;text-align:center;box-shadow:var(--shadow-sm);}
-        .big-btn:active{transform:scale(0.97);box-shadow:none;}
-        .big-btn:focus{outline:4px solid var(--blue);outline-offset:3px;}
-        .big-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
-        .btn-blue{background:var(--blue);color:#fff;box-shadow:0 5px 18px rgba(21,101,192,0.35);}
-        .btn-green{background:var(--green);color:#fff;box-shadow:0 5px 18px rgba(27,122,62,0.35);}
-        .btn-orange{background:var(--orange);color:#fff;box-shadow:0 5px 18px rgba(199,80,0,0.35);}
-        .btn-red{background:var(--red);color:#fff;box-shadow:0 5px 18px rgba(183,28,28,0.35);}
-        .btn-purple{background:var(--purple);color:#fff;box-shadow:0 5px 18px rgba(106,27,154,0.40);}
-        .btn-gold{background:var(--gold);color:#fff;box-shadow:0 5px 18px rgba(245,127,23,0.40);}
-        .btn-outline{background:var(--bg);color:var(--blue);border:3px solid var(--blue);box-shadow:none;}
-        .btn-outline:hover{background:var(--blue-lt);}
-        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
-
-        /* Custom dropdown trigger */
-        .custom-select-wrap{position:relative;}
-        .custom-select-trigger{width:100%;min-height:var(--btn-h);background:var(--bg);border:3px solid var(--blue);border-radius:var(--radius-sm);padding:0 60px 0 20px;font-size:var(--font-lg);font-weight:bold;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:var(--shadow-sm);transition:border-color 0.15s;text-align:left;}
-        .custom-select-trigger:focus{outline:4px solid var(--blue);outline-offset:2px;}
-        .custom-select-trigger .arrow{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:1.8rem;color:var(--blue);pointer-events:none;transition:transform 0.2s;}
-        .custom-select-trigger.open .arrow{transform:translateY(-50%) rotate(180deg);}
-        .custom-select-trigger.placeholder{color:var(--text2);}
-        .custom-select-trigger:disabled{opacity:0.35;cursor:not-allowed;}
-
-        /* Bottom sheet dropdown */
-        .custom-dropdown{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:24px 24px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,0.18);z-index:500;max-height:72vh;flex-direction:column;overflow:hidden;}
-        .custom-dropdown.open{display:flex;}
-        .dropdown-header{padding:16px 20px 12px;border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);flex-shrink:0;}
-        .dropdown-title{font-size:var(--font-lg);font-weight:900;color:var(--blue);}
-        .dropdown-close{width:56px;height:56px;border:none;background:var(--red-lt);color:var(--red);font-size:1.8rem;font-weight:bold;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-        .dropdown-close:focus{outline:4px solid var(--red);}
-        .dropdown-list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
-        .dropdown-item{padding:22px 24px;font-size:var(--font-lg);font-weight:bold;color:var(--text);border-bottom:1.5px solid var(--bg2);cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.1s;}
-        .dropdown-item:active{background:var(--blue-lt);}
-        .dropdown-item.selected{background:var(--blue-lt);color:var(--blue);}
-        .dropdown-item .item-icon{font-size:1.4rem;flex-shrink:0;}
-        .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:499;}
-        .overlay.open{display:block;}
-
-        /* Voice */
-        .voice-card{background:var(--purple-lt);border:3px solid var(--purple);border-radius:var(--radius);padding:22px 18px;margin-bottom:20px;}
-        .voice-label{display:block;font-size:var(--font-sm);font-weight:900;color:var(--purple);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;}
-        .voice-result-box{min-height:70px;background:var(--bg);border:2.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin:14px 0;font-size:var(--font-lg);color:var(--text);font-weight:bold;display:none;line-height:1.5;}
-        .voice-result-box.active{display:block;border-color:var(--purple);}
-        .voice-hint{font-size:var(--font-sm);color:var(--text2);margin-top:10px;line-height:1.6;}
-        .voice-hint span{color:var(--purple);font-weight:bold;}
-        @keyframes pulse-ring{0%{transform:scale(1);opacity:0.7;}50%{transform:scale(1.08);opacity:0.4;}100%{transform:scale(1);opacity:0.7;}}
-        .listening{animation:pulse-ring 1.2s ease-in-out infinite;}
-
-        /* Speed */
-        .speed-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
-        .speed-btn{flex:1;min-width:56px;height:64px;background:var(--bg);color:var(--text);border:2.5px solid var(--border);border-radius:var(--radius-sm);font-size:var(--font-sm);font-weight:bold;cursor:pointer;transition:all 0.15s;}
-        .speed-btn:focus{outline:4px solid var(--blue);}
-        .speed-btn.sel{background:var(--green);color:#fff;border-color:var(--green);}
-
-        /* TTS status */
-        #ttsStatusBar{display:none;background:var(--green-lt);border:3px solid var(--green);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;}
-        #ttsStatusBar.paused{background:var(--gold-lt);border-color:var(--gold);}
-        #ttsStatusBar.done{background:var(--blue-lt);border-color:var(--blue);}
-        .tts-status-label{font-size:var(--font-sm);font-weight:900;color:var(--green);margin-bottom:6px;}
-        #ttsStatusBar.paused .tts-status-label{color:var(--gold);}
-        #ttsStatusBar.done .tts-status-label{color:var(--blue);}
-        #ttsCurrentVerse{font-size:var(--font-xl);font-weight:900;color:var(--text);}
-
-        /* Countdown bar */
-        #readPromptBar{display:none;margin-bottom:20px;}
-        #countdownText{text-align:center;font-size:var(--font-md);color:var(--green);font-weight:bold;margin-top:10px;min-height:28px;}
-        @keyframes pulse-green{0%{box-shadow:0 8px 28px rgba(27,122,62,0.45);transform:scale(1);}50%{box-shadow:0 12px 40px rgba(27,122,62,0.70);transform:scale(1.02);}100%{box-shadow:0 8px 28px rgba(27,122,62,0.45);transform:scale(1);}}
-
-        /* Scripture */
-        #scriptureSection{display:none;}
-        .scripture-ref{font-size:var(--font-xl);font-weight:900;color:var(--blue);margin-bottom:20px;line-height:1.3;}
-        .verse-block{padding:18px 0;border-bottom:2px solid var(--bg2);display:flex;gap:14px;align-items:flex-start;border-radius:10px;transition:background 0.2s;}
-        .verse-block:last-child{border-bottom:none;}
-        .verse-block.reading{background:var(--gold-lt);border-bottom-color:var(--gold);padding-left:10px;padding-right:10px;}
-        .verse-number{font-size:var(--font-md);color:var(--orange);font-weight:900;min-width:52px;text-align:right;flex-shrink:0;padding-top:3px;}
-        .verse-text{font-size:var(--font-lg);color:var(--text);line-height:1.8;}
-
-        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
-        :focus-visible{outline:4px solid var(--blue) !important;outline-offset:3px;}
-        @media(max-width:480px){:root{--font-xl:1.6rem;--font-lg:1.35rem;--btn-h:80px;}}
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>廣東話聖經朗讀</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&display=swap">
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#1b2433;--mute:#5d6b80;--accent:#1f6f78;--hl:#ffe9a8;--line:#d5dbe4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121821;--panel:#1b2330;--ink:#e8edf4;--mute:#93a1b5;--accent:#4fb3bf;--hl:#4a3f12;--line:#2c3746}}
+:root[data-theme="dark"]{--bg:#121821;--panel:#1b2330;--ink:#e8edf4;--mute:#93a1b5;--accent:#4fb3bf;--hl:#4a3f12;--line:#2c3746}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Serif TC","PMingLiU","Songti TC",serif;line-height:1.9}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.35rem;margin:0 0 4px}
+.sub{color:var(--mute);font-size:.85rem;margin:0 0 20px;line-height:1.6}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.mic{display:flex;align-items:center;gap:14px}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#mic{width:72px;height:72px;flex:none;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:1.9rem}
+#mic.on{background:#c0392b;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 12px rgba(192,57,43,.2)}}
+@media (prefers-reduced-motion:reduce){#mic.on{animation:none}}
+#heard{font-size:.95rem;color:var(--mute);min-height:1.9em}
+#msg{font-size:.9rem;margin-top:4px}
+.err{color:#c0392b}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input[type=text]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+input[type=text]{flex:1}
+.btn{padding:9px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:#fff}
+label.file{display:block;font-size:.9rem;color:var(--mute);margin-bottom:8px}
+#stat{font-size:.85rem;color:var(--mute);margin-top:8px}
+#title{font-size:1.15rem;font-weight:600;margin:0 0 10px}
+.v{padding:4px 8px;border-radius:6px;cursor:pointer;font-size:1.08rem}
+.v sup{color:var(--mute);font-size:.7rem;margin-right:6px}
+.v.now{background:var(--hl)}
+.ctl{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);padding:10px 0 4px;margin-top:12px}
+small{color:var(--mute)}
+</style>
 </head>
 <body>
+<main>
+<h1>廣東話聖經朗讀</h1>
+<p class="sub">撳咪高峰，講「創世記第一章」，就會讀出全章。</p>
 
-<header class="site-header" role="banner">
-    <h1>📖 聖經朗讀</h1>
-    <a href="index.html" class="back-link" aria-label="返回標準版">標準版</a>
-</header>
-
-<div class="overlay" id="overlay" onclick="closeAllDropdowns()"></div>
-
-<!-- 書卷下拉 -->
-<div class="custom-dropdown" id="bookDropdown" role="dialog" aria-modal="true" aria-label="選擇書卷">
-    <div class="dropdown-header">
-        <span class="dropdown-title">📚 選擇書卷</span>
-        <button class="dropdown-close" onclick="closeAllDropdowns()" aria-label="關閉">✕</button>
+<section class="panel">
+  <div class="mic">
+    <button id="mic" aria-label="開始語音輸入">🎤</button>
+    <div>
+      <div id="heard">未有語音輸入</div>
+      <div id="msg"></div>
     </div>
-    <div class="dropdown-list" id="bookList" role="listbox"></div>
-</div>
+  </div>
+</section>
 
-<!-- 章數下拉 -->
-<div class="custom-dropdown" id="chapDropdown" role="dialog" aria-modal="true" aria-label="選擇章數">
-    <div class="dropdown-header">
-        <span class="dropdown-title" id="chapDropdownTitle">📖 選擇章數</span>
-        <button class="dropdown-close" onclick="closeAllDropdowns()" aria-label="關閉">✕</button>
+<section class="panel">
+  <label class="file" for="f">載入你嘅和合本 text file（UTF-8，每節一行，例如「創世記 1:1 起初，神創造天地。」）</label>
+  <input id="f" type="file" accept=".txt,text/plain">
+  <div id="stat"></div>
+</section>
+
+<section class="panel">
+  <div class="row">
+    <select id="bk" aria-label="書卷"></select>
+    <select id="ch" aria-label="章"></select>
+    <input id="typed" type="text" placeholder="或者打字：約翰福音 3" aria-label="打字輸入">
+    <button class="btn" id="go">前往</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2 id="title"></h2>
+  <div id="text"></div>
+  <div class="ctl">
+    <div class="row">
+      <button class="btn main" id="play">▶ 朗讀</button>
+      <button class="btn" id="pause">⏸ 暫停</button>
+      <button class="btn" id="stop">⏹ 停止</button>
+      <label>速度 <input id="rate" type="range" min="0.6" max="1.4" step="0.1" value="0.9"></label>
     </div>
-    <div class="dropdown-list" id="chapList" role="listbox"></div>
-</div>
-
-<main class="main" role="main">
-
-    <!-- 載入進度 -->
-    <section id="loadingSection" aria-live="polite">
-        <p id="loadingText">正在下載聖經資料庫…</p>
-        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-    </section>
-
-    <div id="mainControls" style="display:none;">
-
-        <!-- 語音搜尋 -->
-        <div class="voice-card" role="region" aria-label="語音搜尋章節">
-            <span class="voice-label">🎙️ 語音搜尋章節</span>
-            <button class="big-btn btn-purple" id="voiceBtn" onclick="startVoice()" aria-label="按此開始語音輸入">
-                🎙️ 按此說出章節
-            </button>
-            <div class="voice-result-box" id="voiceResultBox" aria-live="polite"></div>
-            <p class="voice-hint">例子：<span>「約翰福音三章」</span>、<span>「詩篇二十三篇」</span>、<span>「創世記一章」</span><br>
-            Android 用戶請以普通話說出書卷名，結果相同。首次使用需授權麥克風，之後不再詢問。</p>
-        </div>
-
-        <!-- 選書卷 -->
-        <div class="card">
-            <span class="step-label">第一步：選書卷</span>
-            <div class="custom-select-wrap">
-                <button class="custom-select-trigger placeholder" id="bookTrigger"
-                    onclick="openDropdown('book')" aria-haspopup="listbox" aria-expanded="false" aria-label="選擇書卷">
-                    <span id="bookTriggerText">── 請選擇書卷 ──</span>
-                    <span class="arrow" aria-hidden="true">▾</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 選章數 -->
-        <div class="card">
-            <span class="step-label">第二步：選章數</span>
-            <div class="custom-select-wrap">
-                <button class="custom-select-trigger placeholder" id="chapTrigger"
-                    onclick="openDropdown('chap')" aria-haspopup="listbox" aria-expanded="false"
-                    aria-label="選擇章數，請先選書卷" disabled>
-                    <span id="chapTriggerText">── 請先選書卷 ──</span>
-                    <span class="arrow" aria-hidden="true">▾</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 語速 -->
-        <div class="card">
-            <span class="step-label">朗讀語速</span>
-            <div class="speed-row" role="group" aria-label="選擇朗讀語速">
-                <button class="speed-btn"     data-rate="0.6" onclick="setSpeed(this)" aria-pressed="false">慢</button>
-                <button class="speed-btn"     data-rate="0.8" onclick="setSpeed(this)" aria-pressed="false">稍慢</button>
-                <button class="speed-btn sel" data-rate="1.0" onclick="setSpeed(this)" aria-pressed="true">正常</button>
-                <button class="speed-btn"     data-rate="1.2" onclick="setSpeed(this)" aria-pressed="false">稍快</button>
-                <button class="speed-btn"     data-rate="1.5" onclick="setSpeed(this)" aria-pressed="false">快</button>
-            </div>
-        </div>
-
-        <!-- 上下章 -->
-        <div class="two-col" id="navRow" style="display:none;">
-            <button class="big-btn btn-outline" onclick="goPrevChap()" aria-label="上一章">❮ 上一章</button>
-            <button class="big-btn btn-outline" onclick="goNextChap()" aria-label="下一章">下一章 ❯</button>
-        </div>
-
-    </div>
-
-    <!-- 朗讀狀態 -->
-    <div id="ttsStatusBar" role="status" aria-live="polite" aria-atomic="true">
-        <div class="tts-status-label" id="ttsLabel">🔊 正在朗讀</div>
-        <div id="ttsCurrentVerse"></div>
-    </div>
-
-    <!-- 朗讀控制 -->
-    <div id="ttsControls" style="display:none; margin-bottom:20px;">
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
-            <button class="big-btn btn-green" id="ttsPlayBtn" onclick="ttsToggle()" aria-label="開始廣東話朗讀">
-                ▶ 開始朗讀
-            </button>
-            <button class="big-btn btn-red" onclick="ttsStop()" aria-label="停止朗讀">
-                ⏹ 停止
-            </button>
-        </div>
-    </div>
-
-    <!-- 倒數提示 -->
-    <div id="readPromptBar">
-        <button id="readPromptBtn" class="big-btn btn-green"
-            style="font-size:2rem;min-height:110px;border-radius:20px;animation:pulse-green 1.5s ease-in-out infinite;"
-            onclick="ttsStartNow()" aria-label="點此立即開始廣東話朗讀">
-            🔊 點此開始朗讀
-        </button>
-        <div id="countdownText"></div>
-    </div>
-
-    <!-- 經文 -->
-    <section id="scriptureSection" aria-label="經文內容">
-        <div class="scripture-ref" id="scriptureRef"></div>
-        <div id="verseList" role="list"></div>
-    </section>
-
+    <small id="voice"></small>
+  </div>
+</section>
 </main>
 
-<div class="sr-only" aria-label="鍵盤快捷鍵：空白鍵 暫停或繼續，Escape 停止，左箭頭 上一章，右箭頭 下一章"></div>
-
 <script>
-// ══════════════════════════════════════
-// 設定
-// ══════════════════════════════════════
-const BIBLE_URL = 'https://cokcok1.github.io/bible-ai/chinese_union_trad_trad.txt';
+// ---------- 書卷表 ----------
+const BOOK_LIST="創世記:創,出埃及記:出,利未記:利,民數記:民,申命記:申,約書亞記:書,士師記:士,路得記:得,撒母耳記上:撒上,撒母耳記下:撒下,列王紀上:王上,列王紀下:王下,歷代志上:代上,歷代志下:代下,以斯拉記:拉,尼希米記:尼,以斯帖記:斯,約伯記:伯,詩篇:詩,箴言:箴,傳道書:傳,雅歌:歌,以賽亞書:賽,耶利米書:耶,耶利米哀歌:哀,以西結書:結,但以理書:但,何西阿書:何,約珥書:珥,阿摩司書:摩,俄巴底亞書:俄,約拿書:拿,彌迦書:彌,那鴻書:鴻,哈巴谷書:哈,西番雅書:番,哈該書:該,撒迦利亞書:亞,瑪拉基書:瑪,馬太福音:太,馬可福音:可,路加福音:路,約翰福音:約,使徒行傳:徒,羅馬書:羅,哥林多前書:林前,哥林多後書:林後,加拉太書:加,以弗所書:弗,腓立比書:腓,歌羅西書:西,帖撒羅尼迦前書:帖前,帖撒羅尼迦後書:帖後,提摩太前書:提前,提摩太後書:提後,提多書:多,腓利門書:門,希伯來書:來,雅各書:雅,彼得前書:彼前,彼得後書:彼後,約翰一書:約壹,約翰二書:約貳,約翰三書:約參,猶大書:猶,啟示錄:啟".split(",").map(s=>s.split(":"));
+const BOOKS=BOOK_LIST.map(b=>b[0]);
+const S2T={"记":"記","书":"書","约":"約","罗":"羅","马":"馬","后":"後","门":"門","来":"來","犹":"猶","启":"啟","显":"顯","诗":"詩","传":"傳","赛":"賽","结":"結","弥":"彌","鸿":"鴻","该":"該","亚":"亞","玛":"瑪","创":"創","经":"經","纪":"紀","历":"歷","撒":"撒","帖":"帖","罗":"羅","腓":"腓","们":"們","书":"書","参":"參","贰":"貳","壹":"壹","数":"數","师":"師","这":"這","说":"說","神":"神","约":"約","丝":"絲","弗":"弗","观":"觀","礼":"禮","声":"聲","个":"個","为":"為","无":"無"};
+const norm=s=>s.replace(/[\s，。、：:；;！!？?「」『』"'()（）]/g,"").replace(/./g,c=>S2T[c]||c);
 
-let bibleData    = {};
-let bookOrder    = [];
-let selectedBook = '';
-let selectedChap = 0;
+// 別名（全名、簡稱、紀/記、去尾字）
+const aliasMap=new Map();
+BOOK_LIST.forEach(([full,abbr])=>{
+  const al=[full,abbr,full.replace(/記/g,"紀"),full.replace(/[記書]/,"")];
+  if(full.endsWith("福音"))al.push(full.slice(0,-2));
+  if(full==="詩篇")al.push("詩篇");
+  al.forEach(a=>{if(a&&!aliasMap.has(a))aliasMap.set(a,full)});
+});
+const aliases=[...aliasMap.keys()].sort((a,b)=>b.length-a.length);
 
-let ttsVerses  = [];
-let ttsIndex   = 0;
-let ttsPlaying = false;
-let ttsPaused  = false;
-let ttsRate    = 1.0;
-let ttsVoice   = null;
-let autoPlayTimer = null;
+function cn2num(s){
+  if(/^\d+$/.test(s))return +s;
+  const d={零:0,〇:0,一:1,二:2,兩:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+  let n=0,cur=0;
+  for(const c of s){
+    if(c in d)cur=d[c];
+    else if(c==="十"){n+=(cur||1)*10;cur=0}
+    else if(c==="百"){n+=(cur||1)*100;cur=0}
+  }
+  return n+cur;
+}
+function parseQuery(text){
+  const s=norm(text);
+  const a=aliases.find(a=>s.includes(a));
+  if(!a)return null;
+  const rest=s.slice(s.indexOf(a)+a.length);
+  const m=rest.match(/[0-9零〇一二兩三四五六七八九十百]+/);
+  return {book:aliasMap.get(a),chapter:m?cn2num(m[0]):1};
+}
 
-// 書卷別名對照表
-const BOOK_ALIASES = {
-    '創世記':['創世記','創世'],'出埃及記':['出埃及記','出埃及'],'利未記':['利未記','利未'],
-    '民數記':['民數記','民數'],'申命記':['申命記','申命'],'約書亞記':['約書亞記','約書亞'],
-    '士師記':['士師記','士師'],'路得記':['路得記','路得'],'撒母耳記上':['撒母耳記上','撒上'],
-    '撒母耳記下':['撒母耳記下','撒下'],'列王紀上':['列王紀上','王上'],'列王紀下':['列王紀下','王下'],
-    '歷代志上':['歷代志上','代上'],'歷代志下':['歷代志下','代下'],'以斯拉記':['以斯拉記','以斯拉'],
-    '尼希米記':['尼希米記','尼希米'],'以斯帖記':['以斯帖記','以斯帖'],'約伯記':['約伯記','約伯'],
-    '詩篇':['詩篇','詩'],'箴言':['箴言','箴'],'傳道書':['傳道書','傳道'],'雅歌':['雅歌'],
-    '以賽亞書':['以賽亞書','以賽亞'],'耶利米書':['耶利米書','耶利米'],
-    '耶利米哀歌':['耶利米哀歌','哀歌'],'以西結書':['以西結書','以西結'],
-    '但以理書':['但以理書','但以理'],'何西阿書':['何西阿書','何西阿'],'約珥書':['約珥書','約珥'],
-    '阿摩司書':['阿摩司書','阿摩司'],'俄巴底亞書':['俄巴底亞書','俄巴底亞'],
-    '約拿書':['約拿書','約拿'],'彌迦書':['彌迦書','彌迦'],'那鴻書':['那鴻書','那鴻'],
-    '哈巴谷書':['哈巴谷書','哈巴谷'],'西番雅書':['西番雅書','西番雅'],'哈該書':['哈該書','哈該'],
-    '撒迦利亞書':['撒迦利亞書','撒迦利亞'],'瑪拉基書':['瑪拉基書','瑪拉基'],
-    '馬太福音':['馬太福音','馬太'],'馬可福音':['馬可福音','馬可'],
-    '路加福音':['路加福音','路加'],'約翰福音':['約翰福音'],
-    '使徒行傳':['使徒行傳','使徒'],'羅馬書':['羅馬書','羅馬'],
-    '哥林多前書':['哥林多前書','哥林多前','林前'],'哥林多後書':['哥林多後書','哥林多後','林後'],
-    '加拉太書':['加拉太書','加拉太'],'以弗所書':['以弗所書','以弗所'],
-    '腓立比書':['腓立比書','腓立比'],'歌羅西書':['歌羅西書','歌羅西'],
-    '帖撒羅尼迦前書':['帖撒羅尼迦前書','帖前'],'帖撒羅尼迦後書':['帖撒羅尼迦後書','帖後'],
-    '提摩太前書':['提摩太前書','提前'],'提摩太後書':['提摩太後書','提後'],
-    '提多書':['提多書','提多'],'腓利門書':['腓利門書','腓利門'],
-    '希伯來書':['希伯來書','希伯來'],'雅各書':['雅各書','雅各'],
-    '彼得前書':['彼得前書','彼前'],'彼得後書':['彼得後書','彼後'],
-    '約翰一書':['約翰一書','約一'],'約翰二書':['約翰二書','約二'],
-    '約翰三書':['約翰三書','約三'],'猶大書':['猶大書','猶大'],'啟示錄':['啟示錄','啟示'],
+// ---------- 資料 ----------
+// data[書卷][章] = [{v,t}, ...]
+let data={};
+const DEMO="創世記 1:1 起初，神創造天地。\n創世記 1:2 地是空虛混沌，淵面黑暗；神的靈運行在水面上。\n創世記 1:3 神說：「要有光」，就有了光。\n創世記 1:4 神看光是好的，就把光暗分開了。\n創世記 1:5 神稱光為晝，稱暗為夜。有晚上，有早晨，這是頭一日。";
+function load(txt){
+  const d={};let n=0,bad=new Set();
+  txt.replace(/^\uFEFF/,"").split(/\r?\n/).forEach(line=>{
+    const m=line.match(/^\s*([^\s\d:：]+?)\s*(\d+)\s*[:：]\s*(\d+)\s*(.*)$/);
+    if(!m)return;
+    m[4]=m[4].replace(/[\s\u3000]+/g,"");
+    if(!/[\u4e00-\u9fff]/.test(m[4]))return;
+    const k=norm(m[1]);
+    const a=aliases.find(a=>a===k)||aliases.find(a=>k.startsWith(a));
+    const book=a?aliasMap.get(a):m[1];
+    if(!a)bad.add(m[1]);
+    ((d[book]??={})[+m[2]]??=[]).push({v:+m[3],t:m[4].trim()});n++;
+  });
+  return {d,n,bad:[...bad]};
+}
+function setData(txt,label){
+  const r=load(txt);
+  if(!r.n){stat("讀唔到經文。請檢查格式係咪類似「創世記 1:1 起初…」。",true);return}
+  data=r.d;
+  const books=Object.keys(data);
+  stat(`${label}：${books.length} 卷、${r.n} 節`+(r.bad.length?`；未能對應書卷名：${r.bad.slice(0,5).join("、")}`:""));
+  fillBooks();
+}
+function stat(t,err){const e=document.getElementById("stat");e.textContent=t;e.className=err?"err":""}
+
+// ---------- 介面 ----------
+const $=id=>document.getElementById(id);
+function fillBooks(){
+  const names=Object.keys(data).sort((a,b)=>(BOOKS.indexOf(a)+1||999)-(BOOKS.indexOf(b)+1||999));
+  $("bk").innerHTML=names.map(n=>`<option>${n}</option>`).join("");
+  fillChapters();
+}
+function fillChapters(){
+  const chs=Object.keys(data[$("bk").value]||{}).map(Number).sort((a,b)=>a-b);
+  $("ch").innerHTML=chs.map(c=>`<option value="${c}">第${c}章</option>`).join("");
+}
+let cur=[],idx=0,token=0,playing=false;
+function show(book,ch){
+  stopSpeech();
+  const verses=(data[book]||{})[ch];
+  if(!verses){msg(`搵唔到「${book}」第 ${ch} 章。`,true);return false}
+  $("bk").value=book;fillChapters();$("ch").value=ch;
+  cur=verses.slice().sort((a,b)=>a.v-b.v);idx=0;
+  $("title").textContent=`${book} 第${ch}章`;
+  $("text").innerHTML=cur.map((x,i)=>`<div class="v" data-i="${i}"><sup>${x.v}</sup>${x.t}</div>`).join("");
+  msg("");return true;
+}
+function msg(t,err){const e=$("msg");e.textContent=t;e.className=err?"err":""}
+$("bk").onchange=()=>{fillChapters();show($("bk").value,+$("ch").value)};
+$("ch").onchange=()=>show($("bk").value,+$("ch").value);
+$("text").onclick=e=>{const v=e.target.closest(".v");if(v){idx=+v.dataset.i;speakFrom(idx)}};
+$("f").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  setData(await f.text(),f.name);
+  const b=$("bk").value;if(b)show(b,+$("ch").value);
+};
+function goText(t){
+  const q=parseQuery(t);
+  $("heard").textContent=t?`「${t}」`:"";
+  if(!q){msg("聽唔明係邊卷書，請再講一次，例如「創世記第一章」。",true);return}
+  if(show(q.book,q.chapter))speakFrom(0);
+}
+$("go").onclick=()=>goText($("typed").value);
+$("typed").onkeydown=e=>{if(e.key==="Enter")goText($("typed").value)};
+
+// ---------- 朗讀 ----------
+const synth=window.speechSynthesis;
+let voice=null;
+function pickVoice(){
+  const vs=synth.getVoices();
+  voice=vs.find(v=>/yue|zh[-_]HK/i.test(v.lang))||vs.find(v=>/zh[-_]TW|zh[-_]Hant/i.test(v.lang))||vs.find(v=>/^zh/i.test(v.lang))||null;
+  $("voice").textContent=voice?`語音：${voice.name}（${voice.lang}）`:"呢部裝置搵唔到中文語音，會用預設語音。";
+}
+if(synth){pickVoice();synth.onvoiceschanged=pickVoice}
+function speakFrom(i){
+  if(!synth){msg("呢個瀏覽器唔支援朗讀。",true);return}
+  synth.cancel();
+  const my=++token;idx=i;playing=true;
+  (function next(){
+    if(my!==token||idx>=cur.length){if(my===token)mark(-1);playing=false;return}
+    mark(idx);
+    const u=new SpeechSynthesisUtterance(cur[idx].t.replace(/[(（][^)）]*[)）]/g,"").replace(/[〈〉「」『』]/g,""));
+    u.lang="zh-HK";if(voice)u.voice=voice;u.rate=+$("rate").value;
+    u.onend=()=>{if(my===token){idx++;next()}};
+    u.onerror=()=>{if(my===token){idx++;next()}};
+    synth.speak(u);
+  })();
+}
+function mark(i){
+  document.querySelectorAll(".v").forEach(el=>el.classList.toggle("now",+el.dataset.i===i));
+  const el=document.querySelector(".v.now");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
+}
+function stopSpeech(){token++;playing=false;if(synth)synth.cancel();mark(-1)}
+$("play").onclick=()=>{if(synth&&synth.paused){synth.resume()}else if(cur.length)speakFrom(idx)};
+$("pause").onclick=()=>synth&&synth.pause();
+$("stop").onclick=stopSpeech;
+
+// ---------- 語音輸入 ----------
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null;
+$("mic").onclick=()=>{
+  if(!SR){msg("呢個瀏覽器唔支援語音輸入，請用 Chrome 或 Edge，或者用打字。",true);return}
+  if(rec){rec.stop();return}
+  stopSpeech();
+  rec=new SR();rec.lang="zh-HK";rec.interimResults=false;rec.maxAlternatives=3;
+  rec.onstart=()=>{$("mic").classList.add("on");$("heard").textContent="請講…";msg("")};
+  rec.onresult=e=>{
+    const alts=[...e.results[0]].map(a=>a.transcript);
+    const best=alts.find(t=>parseQuery(t))||alts[0];
+    goText(best);
+  };
+  rec.onerror=e=>msg(e.error==="not-allowed"?"請允許使用咪高峰。":"語音輸入出錯（"+e.error+"），請再試。",true);
+  rec.onend=()=>{$("mic").classList.remove("on");rec=null};
+  rec.start();
 };
 
-const ZH_NUMS = {
-    '一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10,
-    '十一':11,'十二':12,'十三':13,'十四':14,'十五':15,'十六':16,'十七':17,'十八':18,'十九':19,
-    '二十':20,'二十一':21,'二十二':22,'二十三':23,'二十四':24,'二十五':25,
-    '二十六':26,'二十七':27,'二十八':28,'二十九':29,'三十':30,
-    '三十一':31,'三十二':32,'三十三':33,'三十四':34,'三十五':35,
-    '三十六':36,'三十七':37,'三十八':38,'三十九':39,'四十':40,
-    '四十一':41,'四十二':42,'四十三':43,'四十四':44,'四十五':45,
-    '四十六':46,'四十七':47,'四十八':48,'四十九':49,'五十':50,
-    '一百':100,'一百一':101,'一百五十':150,
-};
+// ---------- 啟動：先用示範經文 ----------
+setData(DEMO,"示範經文（創世記 1:1–5）");
+show("創世記",1);
 
-// ══════════════════════════════════════
-// 初始化
-// ══════════════════════════════════════
-window.onload = function() {
-    initVoice();
-    loadBible();
-    setupKeyboard();
-};
-
-function initVoice() {
-    if (!('speechSynthesis' in window)) return;
-    var findVoice = function() {
-        var vs = window.speechSynthesis.getVoices();
-        ttsVoice = vs.find(function(v){return v.lang==='zh-HK';})
-                || vs.find(function(v){return v.lang.startsWith('zh-HK');})
-                || vs.find(function(v){return v.lang.startsWith('zh');})
-                || null;
-    };
-    findVoice();
-    window.speechSynthesis.onvoiceschanged = findVoice;
-}
-
-// ══════════════════════════════════════
-// 載入聖經
-// ══════════════════════════════════════
-async function loadBible() {
-    try {
-        var res = await fetch(BIBLE_URL);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        var reader = res.body.getReader();
-        var total  = +res.headers.get('Content-Length');
-        var recv   = 0;
-        var chunks = [];
-        while (true) {
-            var result = await reader.read();
-            if (result.done) break;
-            chunks.push(result.value);
-            recv += result.value.length;
-            if (total) {
-                var pct = Math.round(recv / total * 100);
-                document.getElementById('progressFill').style.width = pct + '%';
-                document.getElementById('progressBar').setAttribute('aria-valuenow', pct);
-            }
-        }
-        document.getElementById('loadingText').textContent = '解析中…';
-        var text = new TextDecoder('utf-8').decode(concatArrays(chunks));
-        parseBible(text);
-        document.getElementById('loadingSection').style.display = 'none';
-        document.getElementById('mainControls').style.display = 'block';
-        populateBookDropdown();
-    } catch(e) {
-        document.getElementById('loadingText').innerHTML =
-            '載入失敗，請重新整理頁面。<br><br>' +
-            '<button onclick="location.reload()" style="margin-top:10px;padding:16px 32px;font-size:1.2rem;font-weight:bold;background:#1565c0;color:#fff;border:none;border-radius:12px;cursor:pointer;">🔄 重新載入</button>';
-    }
-}
-
-function concatArrays(arrays) {
-    var len = arrays.reduce(function(s,a){return s+a.length;}, 0);
-    var out = new Uint8Array(len);
-    var p = 0;
-    for (var i=0;i<arrays.length;i++){out.set(arrays[i],p);p+=arrays[i].length;}
-    return out;
-}
-
-function parseBible(raw) {
-    var re = /^(.+?)\s+(\d+):(\d+)\s+(.*)$/;
-    var lines = raw.split('\n');
-    for (var i=0;i<lines.length;i++) {
-        var line = lines[i].trim();
-        var m = line.match(re);
-        if (!m) continue;
-        var book=m[1], c=parseInt(m[2]), v=parseInt(m[3]), content=m[4];
-        if (!bibleData[book]){bibleData[book]={};bookOrder.push(book);}
-        if (!bibleData[book][c]) bibleData[book][c]={};
-        bibleData[book][c][v]=content;
-    }
-}
-
-// ══════════════════════════════════════
-// 下拉選單
-// ══════════════════════════════════════
-function populateBookDropdown() {
-    var list = document.getElementById('bookList');
-    for (var i=0;i<bookOrder.length;i++) {
-        var b = bookOrder[i];
-        var item = document.createElement('div');
-        item.className = 'dropdown-item';
-        item.setAttribute('role','option');
-        item.setAttribute('aria-selected','false');
-        item.setAttribute('tabindex','0');
-        item.dataset.value = b;
-        item.innerHTML = '<span class="item-icon">📗</span>' + b;
-        (function(book){
-            item.onclick = function(){ selectBook(book); };
-            item.onkeydown = function(e){ if(e.key==='Enter'||e.key===' ') selectBook(book); };
-        })(b);
-        list.appendChild(item);
-    }
-}
-
-function populateChapDropdown(book) {
-    var list = document.getElementById('chapList');
-    list.innerHTML = '';
-    document.getElementById('chapDropdownTitle').textContent = '📖 ' + book + ' — 選章數';
-    var chaps = Object.keys(bibleData[book]).map(Number).sort(function(a,b){return a-b;});
-    for (var i=0;i<chaps.length;i++) {
-        var c = chaps[i];
-        var item = document.createElement('div');
-        item.className = 'dropdown-item';
-        item.setAttribute('role','option');
-        item.setAttribute('aria-selected','false');
-        item.setAttribute('tabindex','0');
-        item.dataset.value = c;
-        item.innerHTML = '<span class="item-icon">📄</span>第 ' + c + ' 章';
-        (function(chap){
-            item.onclick = function(){ selectChap(chap); };
-            item.onkeydown = function(e){ if(e.key==='Enter'||e.key===' ') selectChap(chap); };
-        })(c);
-        list.appendChild(item);
-    }
-}
-
-function openDropdown(type) {
-    if (type==='chap' && !selectedBook) return;
-    var dropId  = type==='book' ? 'bookDropdown' : 'chapDropdown';
-    var trigger = type==='book' ? 'bookTrigger'  : 'chapTrigger';
-    document.getElementById(dropId).classList.add('open');
-    document.getElementById('overlay').classList.add('open');
-    document.getElementById(trigger).classList.add('open');
-    document.getElementById(trigger).setAttribute('aria-expanded','true');
-    setTimeout(function(){
-        var listId = type==='book' ? 'bookList' : 'chapList';
-        var first = document.querySelector('#'+listId+' .dropdown-item');
-        if (first) first.focus();
-    }, 100);
-}
-
-function closeAllDropdowns() {
-    ['bookDropdown','chapDropdown'].forEach(function(id){
-        document.getElementById(id).classList.remove('open');
-    });
-    document.getElementById('overlay').classList.remove('open');
-    ['bookTrigger','chapTrigger'].forEach(function(id){
-        document.getElementById(id).classList.remove('open');
-        document.getElementById(id).setAttribute('aria-expanded','false');
-    });
-}
-
-function selectBook(book) {
-    selectedBook = book;
-    var trigger = document.getElementById('bookTrigger');
-    trigger.classList.remove('placeholder');
-    document.getElementById('bookTriggerText').textContent = book;
-    trigger.setAttribute('aria-label','書卷：'+book+'，點擊更改');
-    document.querySelectorAll('#bookList .dropdown-item').forEach(function(el){
-        var sel = el.dataset.value===book;
-        el.classList.toggle('selected',sel);
-        el.setAttribute('aria-selected',sel?'true':'false');
-    });
-    populateChapDropdown(book);
-    var chapTrigger = document.getElementById('chapTrigger');
-    chapTrigger.disabled = false;
-    chapTrigger.classList.add('placeholder');
-    document.getElementById('chapTriggerText').textContent = '── 請選擇章數 ──';
-    chapTrigger.setAttribute('aria-label','選擇 '+book+' 章數');
-    closeAllDropdowns();
-    ttsStopSilent();
-    setTimeout(function(){ openDropdown('chap'); }, 250);
-}
-
-function selectChap(chap) {
-    selectedChap = chap;
-    updateChapTrigger(selectedBook, chap);
-    document.querySelectorAll('#chapList .dropdown-item').forEach(function(el){
-        var sel = parseInt(el.dataset.value)===chap;
-        el.classList.toggle('selected',sel);
-        el.setAttribute('aria-selected',sel?'true':'false');
-    });
-    closeAllDropdowns();
-    ttsStopSilent();
-    renderScripture(selectedBook, selectedChap);
-    startCountdown();
-}
-
-function updateBookTrigger(book) {
-    var trigger = document.getElementById('bookTrigger');
-    trigger.classList.remove('placeholder');
-    document.getElementById('bookTriggerText').textContent = book;
-    trigger.setAttribute('aria-label','書卷：'+book+'，點擊更改');
-}
-
-function updateChapTrigger(book, chap) {
-    var trigger = document.getElementById('chapTrigger');
-    trigger.classList.remove('placeholder');
-    document.getElementById('chapTriggerText').textContent = '第 '+chap+' 章';
-    trigger.setAttribute('aria-label','章數：第 '+chap+' 章，點擊更改');
-}
-
-// ══════════════════════════════════════
-// 語音輸入
-// ══════════════════════════════════════
-function startVoice() {
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert('你的裝置不支援語音輸入，請使用 iPhone Safari。'); return; }
-    var btn = document.getElementById('voiceBtn');
-    var resultBox = document.getElementById('voiceResultBox');
-    var recog = new SR();
-    recog.lang = 'zh-HK';
-    recog.continuous = false;
-    recog.interimResults = false;
-    recog.maxAlternatives = 3;
-    btn.innerHTML = '🔴 聆聽中…';
-    btn.classList.add('listening');
-    btn.disabled = true;
-    resultBox.className = 'voice-result-box active';
-    resultBox.textContent = '聆聽中…';
-    recog.onresult = function(e) {
-        var t = e.results[0][0].transcript;
-        resultBox.textContent = '你說：「' + t + '」';
-        parseVoiceInput(t);
-    };
-    recog.onerror = function(e) { resultBox.textContent = '語音錯誤：' + e.error + '，請再試。'; };
-    recog.onend = function() {
-        btn.innerHTML = '🎙️ 按此說出章節';
-        btn.classList.remove('listening');
-        btn.disabled = false;
-    };
-    recog.start();
-}
-
-function parseVoiceInput(text) {
-    var resultBox = document.getElementById('voiceResultBox');
-    // 比對書卷：攤平所有別名，由長到短排序
-    var allAliases = [];
-    for (var canon in BOOK_ALIASES) {
-        if (!bibleData[canon]) continue;
-        var aliases = BOOK_ALIASES[canon];
-        for (var i=0;i<aliases.length;i++) {
-            allAliases.push({canonical:canon, alias:aliases[i]});
-        }
-    }
-    for (var i=0;i<bookOrder.length;i++) {
-        allAliases.push({canonical:bookOrder[i], alias:bookOrder[i]});
-    }
-    allAliases.sort(function(a,b){return b.alias.length - a.alias.length;});
-    var matchedBook = null;
-    for (var i=0;i<allAliases.length;i++) {
-        if (text.includes(allAliases[i].alias)) { matchedBook=allAliases[i].canonical; break; }
-    }
-    // 比對章數
-    var matchedChap = null;
-    var zhKeys = Object.keys(ZH_NUMS).sort(function(a,b){return b.length-a.length;});
-    for (var i=0;i<zhKeys.length;i++) {
-        var re = new RegExp(zhKeys[i]+'[章篇]');
-        if (re.test(text)) { matchedChap=ZH_NUMS[zhKeys[i]]; break; }
-    }
-    if (!matchedChap) {
-        var m = text.match(/(\d+)\s*[章篇]/);
-        if (m) matchedChap = parseInt(m[1]);
-    }
-    if (!matchedBook && !matchedChap) {
-        resultBox.textContent += '\n❌ 未能識別，請再試。'; return;
-    }
-    if (matchedBook && matchedChap) {
-        if (!bibleData[matchedBook] || !bibleData[matchedBook][matchedChap]) {
-            resultBox.textContent += '\n❌ ' + matchedBook + ' 冇第 ' + matchedChap + ' 章'; return;
-        }
-        resultBox.textContent += '\n✅ 跳去 ' + matchedBook + ' 第 ' + matchedChap + ' 章';
-        selectBook(matchedBook);
-        setTimeout(function(){ selectChap(matchedChap); }, 300);
-    } else if (matchedBook) {
-        resultBox.textContent += '\n✅ 已選 ' + matchedBook + '，請再說章數';
-        selectBook(matchedBook);
-    } else if (selectedBook && bibleData[selectedBook] && bibleData[selectedBook][matchedChap]) {
-        resultBox.textContent += '\n✅ 跳去 ' + selectedBook + ' 第 ' + matchedChap + ' 章';
-        selectChap(matchedChap);
-    } else {
-        resultBox.textContent += '\n❓ 請先選擇書卷';
-    }
-}
-
-// ══════════════════════════════════════
-// 上下章
-// ══════════════════════════════════════
-function goPrevChap() {
-    if (!selectedBook) return;
-    var prev = selectedChap - 1;
-    if (bibleData[selectedBook] && bibleData[selectedBook][prev]) {
-        selectChap(prev);
-    } else {
-        var idx = bookOrder.indexOf(selectedBook);
-        if (idx > 0) {
-            var prevBook = bookOrder[idx-1];
-            var chaps = Object.keys(bibleData[prevBook]).map(Number);
-            selectBook(prevBook);
-            setTimeout(function(){ selectChap(Math.max.apply(null,chaps)); }, 300);
-        }
-    }
-}
-
-function goNextChap() {
-    if (!selectedBook) return;
-    var nxt = selectedChap + 1;
-    if (bibleData[selectedBook] && bibleData[selectedBook][nxt]) {
-        selectChap(nxt);
-    } else {
-        var idx = bookOrder.indexOf(selectedBook);
-        if (idx < bookOrder.length-1) {
-            var nextBook = bookOrder[idx+1];
-            selectBook(nextBook);
-            setTimeout(function(){ selectChap(1); }, 300);
-        }
-    }
-}
-
-// ══════════════════════════════════════
-// 渲染經文
-// ══════════════════════════════════════
-function renderScripture(book, chap) {
-    document.getElementById('scriptureRef').textContent = book + ' 第 ' + chap + ' 章';
-    var verseData = bibleData[book][chap];
-    var nums = Object.keys(verseData).map(Number).sort(function(a,b){return a-b;});
-    ttsVerses = nums.map(function(n){ return {num:n, text:verseData[n]}; });
-    var list = document.getElementById('verseList');
-    list.innerHTML = '';
-    for (var i=0;i<ttsVerses.length;i++) {
-        var num=ttsVerses[i].num, text=ttsVerses[i].text;
-        var block = document.createElement('div');
-        block.className = 'verse-block';
-        block.id = 'verse-'+num;
-        block.setAttribute('role','listitem');
-        block.setAttribute('aria-label','第 '+num+' 節：'+text);
-        var numEl = document.createElement('div');
-        numEl.className = 'verse-number';
-        numEl.setAttribute('aria-hidden','true');
-        numEl.textContent = num;
-        var textEl = document.createElement('div');
-        textEl.className = 'verse-text';
-        textEl.textContent = text;
-        block.appendChild(numEl);
-        block.appendChild(textEl);
-        list.appendChild(block);
-    }
-    document.getElementById('scriptureSection').style.display = 'block';
-    document.getElementById('ttsControls').style.display = 'none';
-    document.getElementById('navRow').style.display = 'grid';
-}
-
-// ══════════════════════════════════════
-// 倒數自動朗讀
-// ══════════════════════════════════════
-function startCountdown() {
-    cancelCountdown();
-    var bar     = document.getElementById('readPromptBar');
-    var countEl = document.getElementById('countdownText');
-    bar.style.display = 'block';
-    bar.scrollIntoView({behavior:'smooth', block:'center'});
-    document.getElementById('readPromptBtn').focus();
-    var sec = 3;
-    countEl.textContent = sec + ' 秒後自動開始朗讀…';
-    autoPlayTimer = setInterval(function(){
-        sec--;
-        if (sec <= 0) {
-            clearInterval(autoPlayTimer);
-            autoPlayTimer = null;
-            countEl.textContent = '';
-            bar.style.display = 'none';
-            ttsStart();
-        } else {
-            countEl.textContent = sec + ' 秒後自動開始朗讀…';
-        }
-    }, 1000);
-}
-
-function cancelCountdown() {
-    if (autoPlayTimer) { clearInterval(autoPlayTimer); autoPlayTimer = null; }
-    document.getElementById('countdownText').textContent = '';
-    document.getElementById('readPromptBar').style.display = 'none';
-}
-
-function ttsStartNow() {
-    cancelCountdown();
-    ttsStart();
-}
-
-// ══════════════════════════════════════
-// 語速
-// ══════════════════════════════════════
-function setSpeed(btn) {
-    document.querySelectorAll('.speed-btn').forEach(function(b){
-        b.classList.remove('sel'); b.setAttribute('aria-pressed','false');
-    });
-    btn.classList.add('sel');
-    btn.setAttribute('aria-pressed','true');
-    ttsRate = parseFloat(btn.dataset.rate);
-    if (ttsPlaying && !ttsPaused) {
-        window.speechSynthesis.cancel();
-        setTimeout(speakCurrent, 100);
-    }
-}
-
-// ══════════════════════════════════════
-// TTS
-// ══════════════════════════════════════
-function ttsToggle() {
-    if (!('speechSynthesis' in window)) { alert('你的裝置不支援語音朗讀，請使用 iPhone Safari。'); return; }
-    if (!ttsVerses.length) return;
-    if (!ttsPlaying) {
-        ttsIndex=0; ttsPlaying=true; ttsPaused=false;
-        updateTtsUI(); speakCurrent();
-    } else if (!ttsPaused) {
-        window.speechSynthesis.pause(); ttsPaused=true; updateTtsUI();
-    } else {
-        window.speechSynthesis.resume(); ttsPaused=false; updateTtsUI();
-    }
-}
-
-function ttsStart() {
-    if (!('speechSynthesis' in window) || !ttsVerses.length) return;
-    window.speechSynthesis.cancel();
-    document.getElementById('ttsControls').style.display = 'block';
-    ttsIndex=0; ttsPlaying=true; ttsPaused=false;
-    updateTtsUI(); speakCurrent();
-}
-
-// 停止但不顯示倒數（內部用）
-function ttsStopSilent() {
-    ttsPlaying=false; ttsPaused=false;
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    cancelCountdown();
-    clearHighlight(); updateTtsUI();
-    document.getElementById('ttsStatusBar').style.display='none';
-    document.getElementById('ttsControls').style.display='none';
-}
-
-function ttsStop() {
-    ttsStopSilent();
-    if (ttsVerses.length) startCountdown();
-    window.scrollTo({top:0, behavior:'smooth'});
-}
-
-function speakCurrent() {
-    if (!ttsPlaying || ttsIndex >= ttsVerses.length) { ttsFinish(); return; }
-    var num  = ttsVerses[ttsIndex].num;
-    var text = ttsVerses[ttsIndex].text;
-    highlightVerse(ttsIndex);
-    var bar = document.getElementById('ttsStatusBar');
-    bar.style.display='block'; bar.className='';
-    document.getElementById('ttsLabel').textContent = '🔊 正在朗讀';
-    document.getElementById('ttsCurrentVerse').textContent = '第 ' + num + ' 節';
-    var el = document.getElementById('verse-'+num);
-    if (el) el.scrollIntoView({behavior:'smooth', block:'center'});
-    var utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'zh-HK';
-    utt.rate = ttsRate;
-    if (ttsVoice) utt.voice = ttsVoice;
-    utt.onend = function() {
-        if (!ttsPlaying) return;
-        ttsIndex++;
-        setTimeout(speakCurrent, 200);
-    };
-    utt.onerror = function(e) {
-        if (e.error==='interrupted'||e.error==='canceled') return;
-        ttsFinish();
-    };
-    window.speechSynthesis.speak(utt);
-}
-
-function ttsFinish() {
-    // 自動讀下一章
-    if (ttsPlaying) {
-        var nextC = selectedChap + 1;
-        if (bibleData[selectedBook] && bibleData[selectedBook][nextC]) {
-            selectedChap = nextC;
-            updateChapTrigger(selectedBook, nextC);
-            populateChapDropdown(selectedBook);
-            renderScripture(selectedBook, nextC);
-            document.getElementById('ttsControls').style.display='block';
-            ttsIndex=0; speakCurrent(); return;
-        }
-        var bookIdx = bookOrder.indexOf(selectedBook);
-        if (bookIdx < bookOrder.length-1) {
-            var nextBook = bookOrder[bookIdx+1];
-            selectedBook = nextBook; selectedChap = 1;
-            updateBookTrigger(nextBook);
-            updateChapTrigger(nextBook, 1);
-            populateChapDropdown(nextBook);
-            renderScripture(nextBook, 1);
-            document.getElementById('ttsControls').style.display='block';
-            ttsIndex=0; speakCurrent(); return;
-        }
-    }
-    // 讀完整本聖經
-    ttsPlaying=false; ttsPaused=false;
-    clearHighlight(); updateTtsUI();
-    var bar = document.getElementById('ttsStatusBar');
-    bar.style.display='block'; bar.className='done';
-    document.getElementById('ttsLabel').textContent='✅ 朗讀完畢';
-    document.getElementById('ttsCurrentVerse').textContent='願神的話語祝福你 🙏';
-    setTimeout(function(){
-        bar.style.display='none';
-        document.getElementById('ttsControls').style.display='none';
-        startCountdown();
-    }, 4000);
-}
-
-function highlightVerse(idx) {
-    clearHighlight();
-    var el = document.getElementById('verse-'+(ttsVerses[idx]?ttsVerses[idx].num:''));
-    if (el) el.classList.add('reading');
-}
-
-function clearHighlight() {
-    document.querySelectorAll('.verse-block.reading').forEach(function(el){el.classList.remove('reading');});
-}
-
-function updateTtsUI() {
-    var btn = document.getElementById('ttsPlayBtn');
-    if (!ttsPlaying) {
-        btn.innerHTML='▶ 開始朗讀'; btn.className='big-btn btn-green';
-        btn.setAttribute('aria-label','開始廣東話朗讀');
-    } else if (ttsPaused) {
-        btn.innerHTML='▶ 繼續朗讀'; btn.className='big-btn btn-orange';
-        btn.setAttribute('aria-label','繼續朗讀');
-    } else {
-        btn.innerHTML='⏸ 暫停'; btn.className='big-btn btn-gold';
-        btn.setAttribute('aria-label','暫停朗讀');
-    }
-}
-
-// ══════════════════════════════════════
-// 鍵盤
-// ══════════════════════════════════════
-function setupKeyboard() {
-    document.addEventListener('keydown', function(e) {
-        if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
-        if (e.key===' ')         { e.preventDefault(); if (ttsVerses.length) ttsToggle(); }
-        if (e.key==='Escape')    { ttsStop(); closeAllDropdowns(); }
-        if (e.key==='ArrowLeft') { e.preventDefault(); goPrevChap(); }
-        if (e.key==='ArrowRight'){ e.preventDefault(); goNextChap(); }
-    });
-}
+// 如果呢個網頁放喺你自己嘅網站，會自動載入和合本
+const SRCS=["chinese_union_trad_trad.txt","https://cokcok1.github.io/bible-ai2/chinese_union_trad_trad.txt"];
+(async()=>{
+  for(const u of SRCS){
+    try{
+      const r=await fetch(u);if(!r.ok)continue;
+      setData(await r.text(),"和合本");
+      const b=$("bk").value;if(b)show(b,1);
+      return;
+    }catch(e){}
+  }
+  stat("自動載入和合本失敗，請用上面嘅選擇檔案手動載入。",true);
+})();
 </script>
 </body>
 </html>
