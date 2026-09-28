@@ -20,7 +20,7 @@ h1{font-size:1.35rem;margin:0 0 4px}
 .mic{display:flex;align-items:center;gap:14px}
 button{font:inherit;cursor:pointer;color:var(--ink)}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-#mic{width:72px;height:72px;flex:none;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:1.9rem}
+#mic{width:72px;height:72px;flex:none;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:1.9rem;user-select:none;-webkit-user-select:none}
 #mic.on{background:#c0392b;animation:pulse 1.2s infinite}
 @keyframes pulse{50%{box-shadow:0 0 0 12px rgba(192,57,43,.2)}}
 @media (prefers-reduced-motion:reduce){#mic.on{animation:none}}
@@ -88,19 +88,23 @@ small{color:var(--mute)}
 </main>
 
 <script>
-// ---------- 書卷表 ----------
+// ---------- 書卷對應表與標準化 ----------
 const BOOK_LIST="創世記:創,出埃及記:出,利未記:利,民數記:民,申命記:申,約書亞記:書,士師記:士,路得記:得,撒母耳記上:撒上,撒母耳記下:撒下,列王紀上:王上,列王紀下:王下,歷代志上:代上,歷代志下:代下,以斯拉記:拉,尼希米記:尼,以斯帖記:斯,約伯記:伯,詩篇:詩,箴言:箴,傳道書:傳,雅歌:歌,以賽亞書:賽,耶利米書:耶,耶利米哀歌:哀,以西結書:結,但以理書:但,何西阿書:何,約珥書:珥,阿摩司書:摩,俄巴底亞書:俄,約拿書:拿,彌迦書:彌,那鴻書:鴻,哈巴谷書:哈,西番雅書:番,哈該書:該,撒迦利亞書:亞,瑪拉基書:瑪,馬太福音:太,馬可福音:可,路加福音:路,約翰福音:約,使徒行傳:徒,羅馬書:羅,哥林多前書:林前,哥林多後書:林後,加拉太書:加,以弗所書:弗,腓立比書:腓,歌羅西書:西,帖撒羅尼迦前書:帖前,帖撒羅尼迦後書:帖後,提摩太前書:提前,提摩太後書:提後,提多書:多,腓利門書:門,希伯來書:來,雅各書:雅,彼得前書:彼前,彼得後書:彼後,約翰一書:約壹,約翰二書:約貳,約翰三書:約參,猶大書:猶,啟示錄:啟".split(",").map(s=>s.split(":"));
 const BOOKS=BOOK_LIST.map(b=>b[0]);
-const S2T={"记":"記","书":"書","约":"約","罗":"羅","马":"馬","后":"後","门":"門","来":"來","犹":"猶","启":"啟","显":"顯","诗":"詩","传":"傳","赛":"賽","结":"結","弥":"彌","鸿":"鴻","该":"該","亚":"亞","玛":"瑪","创":"創","经":"經","纪":"紀","历":"歷","撒":"撒","帖":"帖","罗":"羅","腓":"腓","们":"們","书":"書","参":"參","贰":"貳","壹":"壹","数":"數","师":"師","这":"這","说":"說","神":"神","约":"約","丝":"絲","弗":"弗","观":"觀","礼":"禮","声":"聲","个":"個","为":"為","无":"無"};
+
+const S2T={"记":"記","书":"書","约":"約","罗":"羅","马":"馬","后":"後","门":"門","来":"來","犹":"猶","启":"啟","显":"顯","诗":"詩","传":"傳","赛":"賽","结":"結","弥":"彌","鸿":"鴻","该":"該","亚":"亞","玛":"瑪","创":"創","经":"經","纪":"紀","历":"歷","撒":"撒","帖":"帖","腓":"腓","参":"參","贰":"貳","壹":"壹","数":"數","师":"師","说":"說","神":"神"};
 const norm=s=>s.replace(/[\s，。、：:；;！!？?「」『』"'()（）]/g,"").replace(/./g,c=>S2T[c]||c);
 
-// 別名（全名、簡稱、紀/記、去尾字）
 const aliasMap=new Map();
 BOOK_LIST.forEach(([full,abbr])=>{
   const al=[full,abbr,full.replace(/記/g,"紀"),full.replace(/[記書]/,"")];
   if(full.endsWith("福音"))al.push(full.slice(0,-2));
-  if(full==="詩篇")al.push("詩篇");
-  al.forEach(a=>{if(a&&!aliasMap.has(a))aliasMap.set(a,full)});
+  al.forEach(a=>{
+    if(a){
+      aliasMap.set(a,full);
+      aliasMap.set(norm(a),full);
+    }
+  });
 });
 const aliases=[...aliasMap.keys()].sort((a,b)=>b.length-a.length);
 
@@ -115,6 +119,7 @@ function cn2num(s){
   }
   return n+cur;
 }
+
 function parseQuery(text){
   const s=norm(text);
   const a=aliases.find(a=>s.includes(a));
@@ -124,47 +129,85 @@ function parseQuery(text){
   return {book:aliasMap.get(a),chapter:m?cn2num(m[0]):1};
 }
 
-// ---------- 資料 ----------
-// data[書卷][章] = [{v,t}, ...]
+// ---------- 經文資料處理 ----------
 let data={};
 const DEMO="創世記 1:1 起初，神創造天地。\n創世記 1:2 地是空虛混沌，淵面黑暗；神的靈運行在水面上。\n創世記 1:3 神說：「要有光」，就有了光。\n創世記 1:4 神看光是好的，就把光暗分開了。\n創世記 1:5 神稱光為晝，稱暗為夜。有晚上，有早晨，這是頭一日。";
+
 function load(txt){
   const d={};let n=0,bad=new Set();
-  txt.replace(/^\uFEFF/,"").split(/\r?\n/).forEach(line=>{
-    const m=line.match(/^\s*([^\s\d:：]+?)\s*(\d+)\s*[:：]\s*(\d+)\s*(.*)$/);
-    if(!m)return;
-    m[4]=m[4].replace(/[\s\u3000]+/g,"");
-    if(!/[\u4e00-\u9fff]/.test(m[4]))return;
-    const k=norm(m[1]);
-    const a=aliases.find(a=>a===k)||aliases.find(a=>k.startsWith(a));
-    const book=a?aliasMap.get(a):m[1];
-    if(!a)bad.add(m[1]);
-    ((d[book]??={})[+m[2]]??=[]).push({v:+m[3],t:m[4].trim()});n++;
-  });
-  return {d,n,bad:[...bad]};
+  const lines = txt.replace(/^\uFEFF/,"").split(/\r?\n/);
+
+  for(let i=0; i<lines.length; i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+
+    const colonIdx = line.indexOf(':') !== -1 ? line.indexOf(':') : line.indexOf('：');
+    if(colonIdx === -1) continue;
+
+    const left = line.slice(0, colonIdx).trim();
+    const right = line.slice(colonIdx + 1).trim();
+
+    const spaceIdx = left.lastIndexOf(' ');
+    let rawBook = "", chStr = "";
+    if(spaceIdx !== -1){
+      rawBook = left.slice(0, spaceIdx).trim();
+      chStr = left.slice(spaceIdx + 1).trim();
+    } else {
+      const match = left.match(/^([^\d]+)(\d+)$/);
+      if(match){ rawBook = match[1]; chStr = match[2]; }
+    }
+
+    const vMatch = right.match(/^(\d+)\s*(.*)$/);
+    if(!rawBook || !chStr || !vMatch) continue;
+
+    const ch = +chStr;
+    const v = +vMatch[1];
+    const text = vMatch[2];
+
+    const normBook = norm(rawBook);
+    const book = aliasMap.get(normBook) || aliasMap.get(rawBook);
+
+    if(book){
+      ((d[book]??={})[ch]??=[]).push({v, t: text});
+      n++;
+    } else {
+      bad.add(rawBook);
+    }
+  }
+  return {d, n, bad:[...bad]};
 }
+
 function setData(txt,label){
-  const r=load(txt);
-  if(!r.n){stat("讀唔到經文。請檢查格式係咪類似「創世記 1:1 起初…」。",true);return}
-  data=r.d;
-  const books=Object.keys(data);
-  stat(`${label}：${books.length} 卷、${r.n} 節`+(r.bad.length?`；未能對應書卷名：${r.bad.slice(0,5).join("、")}`:""));
-  fillBooks();
+  stat("正在載入經文資料...");
+  setTimeout(()=>{
+    const r=load(txt);
+    if(!r.n){stat("讀唔到經文。請檢查格式係咪類似「創世記 1:1 起初…」。",true);return}
+    data=r.d;
+    const books=Object.keys(data);
+    stat(`${label}：${books.length} 卷、${r.n} 節`+(r.bad.length?`；未能對應書卷名：${r.bad.slice(0,5).join("、")}`:""));
+    fillBooks();
+    show($("bk").value, 1);
+  }, 30);
 }
+
 function stat(t,err){const e=document.getElementById("stat");e.textContent=t;e.className=err?"err":""}
 
-// ---------- 介面 ----------
+// ---------- UI 互動控制 ----------
 const $=id=>document.getElementById(id);
+
 function fillBooks(){
   const names=Object.keys(data).sort((a,b)=>(BOOKS.indexOf(a)+1||999)-(BOOKS.indexOf(b)+1||999));
   $("bk").innerHTML=names.map(n=>`<option>${n}</option>`).join("");
   fillChapters();
 }
+
 function fillChapters(){
   const chs=Object.keys(data[$("bk").value]||{}).map(Number).sort((a,b)=>a-b);
   $("ch").innerHTML=chs.map(c=>`<option value="${c}">第${c}章</option>`).join("");
 }
+
 let cur=[],idx=0,token=0,playing=false;
+
 function show(book,ch){
   stopSpeech();
   const verses=(data[book]||{})[ch];
@@ -175,6 +218,7 @@ function show(book,ch){
   $("text").innerHTML=cur.map((x,i)=>`<div class="v" data-i="${i}"><sup>${x.v}</sup>${x.t}</div>`).join("");
   msg("");return true;
 }
+
 function msg(t,err){const e=$("msg");e.textContent=t;e.className=err?"err":""}
 $("bk").onchange=()=>{fillChapters();show($("bk").value,+$("ch").value)};
 $("ch").onchange=()=>show($("bk").value,+$("ch").value);
@@ -182,28 +226,32 @@ $("text").onclick=e=>{const v=e.target.closest(".v");if(v){idx=+v.dataset.i;spea
 $("f").onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   setData(await f.text(),f.name);
-  const b=$("bk").value;if(b)show(b,+$("ch").value);
 };
+
 function goText(t){
   const q=parseQuery(t);
   $("heard").textContent=t?`「${t}」`:"";
   if(!q){msg("聽唔明係邊卷書，請再講一次，例如「創世記第一章」。",true);return}
   if(show(q.book,q.chapter))speakFrom(0);
 }
+
 $("go").onclick=()=>goText($("typed").value);
 $("typed").onkeydown=e=>{if(e.key==="Enter")goText($("typed").value)};
 
-// ---------- 朗讀 ----------
+// ---------- TTS 語音朗讀 ----------
 const synth=window.speechSynthesis;
 let voice=null;
+
 function pickVoice(){
+  if(!synth) return;
   const vs=synth.getVoices();
   voice=vs.find(v=>/yue|zh[-_]HK/i.test(v.lang))||vs.find(v=>/zh[-_]TW|zh[-_]Hant/i.test(v.lang))||vs.find(v=>/^zh/i.test(v.lang))||null;
-  $("voice").textContent=voice?`語音：${voice.name}（${voice.lang}）`:"呢部裝置搵唔到中文語音，會用預設語音。";
+  $("voice").textContent=voice?`語音：${voice.name}（${voice.lang}）`:"呢部裝置搵唔到廣東話/中文語音，會採用系統預設。";
 }
 if(synth){pickVoice();synth.onvoiceschanged=pickVoice}
+
 function speakFrom(i){
-  if(!synth){msg("呢個瀏覽器唔支援朗讀。",true);return}
+  if(!synth){msg("呢個瀏覽器唔支援朗讀功能。",true);return}
   synth.cancel();
   const my=++token;idx=i;playing=true;
   (function next(){
@@ -216,20 +264,26 @@ function speakFrom(i){
     synth.speak(u);
   })();
 }
+
 function mark(i){
   document.querySelectorAll(".v").forEach(el=>el.classList.toggle("now",+el.dataset.i===i));
   const el=document.querySelector(".v.now");if(el)el.scrollIntoView({block:"center",behavior:"smooth"});
 }
+
 function stopSpeech(){token++;playing=false;if(synth)synth.cancel();mark(-1)}
 $("play").onclick=()=>{if(synth&&synth.paused){synth.resume()}else if(cur.length)speakFrom(idx)};
 $("pause").onclick=()=>synth&&synth.pause();
 $("stop").onclick=stopSpeech;
 
-// ---------- 語音輸入 ----------
+// ---------- Web Speech / MediaRecorder 語音輸入 ----------
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let rec=null;
+
 $("mic").onclick=()=>{
-  if(!SR){msg("呢個瀏覽器唔支援語音輸入，請用 Chrome 或 Edge，或者用打字。",true);return}
+  if(!SR){
+    msg("呢個瀏覽器唔支援標準語音識別 API，請用 Chrome/Edge，或直接輸入文字/手機輸入法聽寫。",true);
+    return;
+  }
   if(rec){rec.stop();return}
   stopSpeech();
   rec=new SR();rec.lang="zh-HK";rec.interimResults=false;rec.maxAlternatives=3;
@@ -239,27 +293,24 @@ $("mic").onclick=()=>{
     const best=alts.find(t=>parseQuery(t))||alts[0];
     goText(best);
   };
-  rec.onerror=e=>msg(e.error==="not-allowed"?"請允許使用咪高峰。":"語音輸入出錯（"+e.error+"），請再試。",true);
+  rec.onerror=e=>msg(e.error==="not-allowed"?"請允許使用咪高峰權限。":"語音輸入出錯（"+e.error+"），請再試。",true);
   rec.onend=()=>{$("mic").classList.remove("on");rec=null};
   rec.start();
 };
 
-// ---------- 啟動：先用示範經文 ----------
+// ---------- 初始化載入 ----------
 setData(DEMO,"示範經文（創世記 1:1–5）");
-show("創世記",1);
 
-// 如果呢個網頁放喺你自己嘅網站，會自動載入和合本
 const SRCS=["chinese_union_trad_trad.txt","https://cokcok1.github.io/bible-ai2/chinese_union_trad_trad.txt"];
 (async()=>{
   for(const u of SRCS){
     try{
       const r=await fetch(u);if(!r.ok)continue;
       setData(await r.text(),"和合本");
-      const b=$("bk").value;if(b)show(b,1);
       return;
     }catch(e){}
   }
-  stat("自動載入和合本失敗，請用上面嘅選擇檔案手動載入。",true);
+  stat("自動載入和合本失敗，請用上方選擇檔案載入。",true);
 })();
 </script>
 </body>
